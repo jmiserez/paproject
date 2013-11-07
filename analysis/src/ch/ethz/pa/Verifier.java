@@ -20,6 +20,8 @@ public class Verifier {
 			analysis.run();
 			// ....
 		}
+		//TODO change this to a better solution
+		System.out.println("Program is UNSAFE");
 	}
 	
 	private static SootClass loadClass(String name) {

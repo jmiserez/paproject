@@ -27,7 +27,8 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	}
 	
 	void run() {
-		doAnalysis();
+		//TODO reenable next line
+//		doAnalysis();
 	}
 	
 	static void unhandled(String what) {
