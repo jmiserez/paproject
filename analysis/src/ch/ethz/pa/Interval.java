@@ -21,8 +21,26 @@ public class Interval {
 	}
 	
 	public static Interval plus(Interval i1, Interval i2) {
-		// TODO: Handle overflow.
+		// TODO: Handle overflow. 
 		return new Interval(i1.lower + i2.lower, i1.upper + i2.upper);
+	}
+
+	public static Interval minus(Interval i1, Interval i2) {
+		// TODO: Handle overflow. 
+		return new Interval(i1.lower - i2.lower, i1.upper - i2.upper);
+	}
+
+	public static Interval multiply(Interval i1, Interval i2) {
+		// TODO: Handle overflow. 
+		int newLower = i1.lower * i2.lower, 
+				newUpper = i1.upper * i2.upper;
+		// To handle case [-1, 1] * [-1, 1]
+		if (i1.lower < 0 && i2.lower < 0)
+			newLower *= -1;
+		// To handle case [-2, -1] * [-2, -1]
+		if (i1.upper < 0 && i2.upper < 0)
+			newUpper *= -1;
+		return new Interval(newLower, newUpper);
 	}
 	
 	@Override
