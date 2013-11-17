@@ -17,12 +17,12 @@ import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	public Analysis(UnitGraph g) {
 		super(g);
-		//System.out.println(g.toString());
+		System.out.println(g.toString());
 	}
 	
 	void run() {
 		//TODO reenable next line
-//		doAnalysis();
+		doAnalysis();
 	}
 	
 	static void unhandled(String what) {
@@ -34,7 +34,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	protected void flowThrough(IntervalPerVar current, Unit op, List<IntervalPerVar> fallOut,
 			List<IntervalPerVar> branchOuts) {
 		// TODO: This can be optimized.
-		//System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      state: " + current);
+		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      state: " + current);
 	
 		Stmt s = (Stmt)op;
 		IntervalPerVar fallState = new IntervalPerVar();
@@ -46,7 +46,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			DefinitionStmt sd = (DefinitionStmt) s;
 			Value left = sd.getLeftOp();
 			Value right = sd.getRightOp();
-			//System.out.println(left.getClass().getName() + " " + right.getClass().getName());
+			System.out.println(left.getClass().getName() + " " + right.getClass().getName());
 			
 			// You do not need to handle these cases:
 			if ((!(left instanceof StaticFieldRef))
@@ -145,8 +145,8 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	protected void merge(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		// TODO: join, widening, etc goes here.
 		IntervalPerVar.join(src1, src2, trg);
-		//System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
-		//		src1.toString(), src2.toString(), trg.toString());
+		System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
+				src1.toString(), src2.toString(), trg.toString());
 	}
 
 	@Override
