@@ -4,11 +4,13 @@ import java.util.List;
 
 import soot.Unit;
 import soot.Value;
+import soot.ValueBox;
 import soot.jimple.*;
 import soot.jimple.internal.JArrayRef;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
+import soot.jimple.internal.JVirtualInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
@@ -24,6 +26,14 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	void run() {
 		//TODO reenable next line
 		doAnalysis();
+	}
+	
+	static void unsafe(String reason){
+		if(reason != null){
+			System.err.println("Program is unsafe. Reason: "+reason);
+		}
+		System.out.println("Program is UNSAFE\n");
+		System.exit(0);
 	}
 	
 	static void unhandled(String what) {
@@ -88,6 +98,16 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 						if (right instanceof MulExpr) {
 							fallState.putIntervalForVar(varName, Interval.multiply(i1, i2));
 						}
+					}
+				} else if (right instanceof JVirtualInvokeExpr) {
+					JVirtualInvokeExpr expr = (JVirtualInvokeExpr) right;
+					if(expr.getMethod().getName().equals("readSensor")){
+						Value r2 = ((JVirtualInvokeExpr) right).getArg(0);
+						Interval i2 = tryGetIntervalForValue(current, r2);
+						if (!(new Interval(0, 15).contains(i2))){
+							unsafe("readSensor argument was out of range ("+i2.toString()+")");
+						}
+						fallState.putIntervalForVar(varName, new Interval(0, 15));
 					}
 				} else {
 					fallState.putIntervalForVar(varName, Interval.TOP);

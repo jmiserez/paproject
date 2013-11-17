@@ -72,6 +72,11 @@ public class Interval {
 			return false;
 		return lower == i.lower && upper == i.upper;
 	}
+	
+	public boolean contains(Interval other){
+		//TODO implement
+		return false;
+	}
 
 	private boolean isBot() {
 		return lower > upper;

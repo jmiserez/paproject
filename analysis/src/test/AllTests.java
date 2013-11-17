@@ -52,7 +52,7 @@ public class AllTests {
 	}
 	@Test
 	public void testExampleTest2Height() {
-		String result = verify("ExampleTest1");
+		String result = verify("ExampleTest2");
 		//program is safe as per comments
 		assertEquals(result,  "Program is SAFE\n");
 	}
