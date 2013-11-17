@@ -39,24 +39,28 @@ public class AllTests {
 		assertEquals(result,  "Program is UNSAFE\n");
 	}
 	@Test
-	public void testExampleTest1() {
-		String result = verify("ExampleTest");
+	public void testExampleTest1Speed() {
+		String result = verify("ExampleTest1");
+		//value is in [-989, 989]
 		assertEquals(result,  "Program is SAFE\n");
 	}
 	@Test
-	public void testExampleTest2() {
-		String result = verify("ExampleTest");
+	public void testExampleTest2Height() {
+		String result = verify("ExampleTest1");
+		//program is safe as per comments
 		assertEquals(result,  "Program is SAFE\n");
 	}
 	@Test
-	public void testExampleTest3() {
-		String result = verify("ExampleTest");
+	public void testExampleTest3HeightWithBug() {
+		String result = verify("ExampleTest3");
+		//program has a BUG as per comments
 		assertEquals(result,  "Program is UNSAFE\n");
 	}
 	
 	@Test
-	public void testExampleTest4() {
-		String result = verify("ExampleTest");
+	public void testExampleTest4Pressure() {
+		String result = verify("ExampleTest4");
+		//program is safe due to condition in the end
 		assertEquals(result,  "Program is SAFE\n");
 	}
 	
