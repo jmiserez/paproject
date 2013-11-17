@@ -144,7 +144,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	@Override
 	protected void merge(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		// TODO: join, widening, etc goes here.
-		trg.copyFrom(src1);
+		IntervalPerVar.join(src1, src2, trg);
 		//System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
 		//		src1.toString(), src2.toString(), trg.toString());
 	}

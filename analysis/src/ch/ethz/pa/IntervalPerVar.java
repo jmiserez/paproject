@@ -29,6 +29,12 @@ public class IntervalPerVar {
 		}
 	}
 	
+	public static void join(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
+		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
+			trg.putIntervalForVar(entry.getKey(), entry.getValue().join(src2.getIntervalForVar(entry.getKey())));
+		}
+	}
+	
 	void putIntervalForVar(String var, Interval i) {
 		values.put(var, i);
 	}
