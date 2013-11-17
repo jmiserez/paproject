@@ -22,12 +22,18 @@ public class Interval {
 	
 	public static Interval plus(Interval i1, Interval i2) {
 		// TODO: Handle overflow. 
-		return new Interval(i1.lower + i2.lower, i1.upper + i2.upper);
+		return bounded(new Interval(i1.lower +i2.lower, i1.upper + i2.upper));
+	}
+
+	private static Interval bounded(Interval i) {
+		i.lower = Math.max(i.upper, -INF);
+		i.upper = Math.min(i.upper, INF);
+		return i;
 	}
 
 	public static Interval minus(Interval i1, Interval i2) {
 		// TODO: Handle overflow. 
-		return new Interval(i1.lower - i2.lower, i1.upper - i2.upper);
+		return bounded(new Interval(i1.lower - i2.lower, i1.upper - i2.upper));
 	}
 
 	public static Interval multiply(Interval i1, Interval i2) {
@@ -40,11 +46,13 @@ public class Interval {
 		// To handle case [-2, -1] * [-2, -1]
 		if (i1.upper < 0 && i2.upper < 0)
 			newUpper *= -1;
-		return new Interval(newLower, newUpper);
+		return bounded(new Interval(newLower, newUpper));
 	}
 	
 	public Interval join(Interval o) {
-		return new Interval(Math.min(this.lower, o.lower), Math.max(this.upper, o.upper));
+		if (o == null)
+			return TOP;
+		return bounded(new Interval(Math.min(this.lower, o.lower), Math.max(this.upper, o.upper)));
 	}
 
 	private void set(int min, int max) {

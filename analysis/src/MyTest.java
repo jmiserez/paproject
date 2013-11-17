@@ -16,5 +16,6 @@ public class MyTest {
 			y++;
 			i = i - 1;
 		}
+		System.out.println(y);
 	}
 }
