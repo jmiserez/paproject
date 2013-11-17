@@ -43,8 +43,13 @@ public class Interval {
 		return new Interval(newLower, newUpper);
 	}
 	
-	public static Interval join(Interval i1, Interval i2) {
-		return new Interval(Math.min(i1.lower, i2.lower), Math.max(i1.upper, i2.upper));
+	public Interval join(Interval o) {
+		return new Interval(Math.min(this.lower, o.lower), Math.max(this.upper, o.upper));
+	}
+
+	private void set(int min, int max) {
+		this.lower = min;
+		this.upper = max;
 	}
 
 	@Override

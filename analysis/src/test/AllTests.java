@@ -28,6 +28,11 @@ public class AllTests {
     public void tearDown() {
     	
     }
+    
+    @Test
+    public void testSimple() {
+    	verify("MyTest");
+    }
 	
     @Test
     public void testAircraftControl() {

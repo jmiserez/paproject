@@ -4,13 +4,7 @@ import java.util.List;
 
 import soot.Unit;
 import soot.Value;
-import soot.jimple.AddExpr;
-import soot.jimple.BinopExpr;
-import soot.jimple.DefinitionStmt;
-import soot.jimple.IntConstant;
-import soot.jimple.InvokeExpr;
-import soot.jimple.StaticFieldRef;
-import soot.jimple.Stmt;
+import soot.jimple.*;
 import soot.jimple.internal.JArrayRef;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
@@ -23,12 +17,12 @@ import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	public Analysis(UnitGraph g) {
 		super(g);
-		//System.out.println(g.toString());
+		System.out.println(g.toString());
 	}
 	
 	void run() {
 		//TODO reenable next line
-//		doAnalysis();
+		doAnalysis();
 	}
 	
 	static void unhandled(String what) {
@@ -40,7 +34,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	protected void flowThrough(IntervalPerVar current, Unit op, List<IntervalPerVar> fallOut,
 			List<IntervalPerVar> branchOuts) {
 		// TODO: This can be optimized.
-		//System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      state: " + current);
+		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      state: " + current);
 	
 		Stmt s = (Stmt)op;
 		IntervalPerVar fallState = new IntervalPerVar();
@@ -52,7 +46,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			DefinitionStmt sd = (DefinitionStmt) s;
 			Value left = sd.getLeftOp();
 			Value right = sd.getRightOp();
-			//System.out.println(left.getClass().getName() + " " + right.getClass().getName());
+			System.out.println(left.getClass().getName() + " " + right.getClass().getName());
 			
 			// You do not need to handle these cases:
 			if ((!(left instanceof StaticFieldRef))
@@ -86,6 +80,12 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 						// Implement transformers.
 						if (right instanceof AddExpr) {
 							fallState.putIntervalForVar(varName, Interval.plus(i1, i2));
+						}
+						if (right instanceof SubExpr) {
+							fallState.putIntervalForVar(varName, Interval.minus(i1, i2));
+						}
+						if (right instanceof MulExpr) {
+							fallState.putIntervalForVar(varName, Interval.multiply(i1, i2));
 						}
 					}
 				}
@@ -144,9 +144,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	@Override
 	protected void merge(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		// TODO: join, widening, etc goes here.
-		trg.copyFrom(src1);
-		//System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
-		//		src1.toString(), src2.toString(), trg.toString());
+		IntervalPerVar.join(src1, src2, trg);
+		System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
+				src1.toString(), src2.toString(), trg.toString());
 	}
 
 	@Override
