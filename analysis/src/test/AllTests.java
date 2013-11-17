@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import test.util.CloneOutputStream;
 import ch.ethz.pa.Verifier;
 
 public class AllTests {
@@ -67,7 +68,8 @@ public class AllTests {
 	private String verify(String className){
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-    	System.setOut(new PrintStream(myOut));
+		CloneOutputStream cloningStream = new CloneOutputStream(System.out, myOut);
+		System.setOut(new PrintStream(cloningStream));
 
     	Verifier.main(new String[]{className});
 
