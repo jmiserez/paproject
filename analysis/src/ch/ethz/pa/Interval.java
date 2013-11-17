@@ -43,6 +43,10 @@ public class Interval {
 		return new Interval(newLower, newUpper);
 	}
 	
+	public static Interval join(Interval i1, Interval i2) {
+		return new Interval(Math.min(i1.lower, i2.lower), Math.max(i1.upper, i2.upper));
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Interval)) return false;
