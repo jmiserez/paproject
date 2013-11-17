@@ -16,6 +16,7 @@ public class MyTest {
 			y++;
 			i = i - 1;
 		}
-		System.out.println(y);
+		if (y < 7)
+			System.out.println("Launch rocket");
 	}
 }

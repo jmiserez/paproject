@@ -6,6 +6,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.*;
 import soot.jimple.internal.JArrayRef;
+import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JimpleLocal;
@@ -95,6 +96,19 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 				// ...
 			}
 			// ...
+		} else if (s instanceof JIfStmt) {
+			IfStmt is = (IfStmt) s;
+            Value condition = is.getCondition();
+            if (condition instanceof BinopExpr) {
+
+                BinopExpr binopExpr = (BinopExpr) condition;
+
+                Value a1 = binopExpr.getOp1();
+                Value a2 = binopExpr.getOp2();
+                if (binopExpr instanceof CmpExpr) {
+                	
+                }
+            }
 		} else if (s instanceof JInvokeStmt) {
 			// A method is called. e.g. AircraftControl.adjustValue
 			
@@ -129,7 +143,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			JimpleLocal l = ((JimpleLocal)v);
 			return currentState.getIntervalForVar(l.getName());
 		}
-		return null;
+		return Interval.TOP;
 	}
 
 	@Override
