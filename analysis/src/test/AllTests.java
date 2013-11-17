@@ -36,6 +36,27 @@ public class AllTests {
 	@Test
 	public void testExampleTest() {
 		String result = verify("ExampleTest");
+		assertEquals(result,  "Program is UNSAFE\n");
+	}
+	@Test
+	public void testExampleTest1() {
+		String result = verify("ExampleTest");
+		assertEquals(result,  "Program is SAFE\n");
+	}
+	@Test
+	public void testExampleTest2() {
+		String result = verify("ExampleTest");
+		assertEquals(result,  "Program is SAFE\n");
+	}
+	@Test
+	public void testExampleTest3() {
+		String result = verify("ExampleTest");
+		assertEquals(result,  "Program is UNSAFE\n");
+	}
+	
+	@Test
+	public void testExampleTest4() {
+		String result = verify("ExampleTest");
 		assertEquals(result,  "Program is SAFE\n");
 	}
 	
