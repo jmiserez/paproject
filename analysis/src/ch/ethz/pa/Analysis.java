@@ -4,13 +4,7 @@ import java.util.List;
 
 import soot.Unit;
 import soot.Value;
-import soot.jimple.AddExpr;
-import soot.jimple.BinopExpr;
-import soot.jimple.DefinitionStmt;
-import soot.jimple.IntConstant;
-import soot.jimple.InvokeExpr;
-import soot.jimple.StaticFieldRef;
-import soot.jimple.Stmt;
+import soot.jimple.*;
 import soot.jimple.internal.JArrayRef;
 import soot.jimple.internal.JInstanceFieldRef;
 import soot.jimple.internal.JInvokeStmt;
@@ -86,6 +80,12 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 						// Implement transformers.
 						if (right instanceof AddExpr) {
 							fallState.putIntervalForVar(varName, Interval.plus(i1, i2));
+						}
+						if (right instanceof SubExpr) {
+							fallState.putIntervalForVar(varName, Interval.minus(i1, i2));
+						}
+						if (right instanceof MulExpr) {
+							fallState.putIntervalForVar(varName, Interval.multiply(i1, i2));
 						}
 					}
 				}
