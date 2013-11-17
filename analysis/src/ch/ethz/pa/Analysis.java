@@ -61,7 +61,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			// TODO: Handle other cases. For example:
 
 			if (left instanceof JimpleLocal) {
-				String varName = ((JimpleLocal)left).getName();				
+				String varName = ((JimpleLocal)left).getName();
 				
 				if (right instanceof IntConstant) {
 					IntConstant c = ((IntConstant)right);
@@ -88,6 +88,8 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 							fallState.putIntervalForVar(varName, Interval.multiply(i1, i2));
 						}
 					}
+				} else {
+					fallState.putIntervalForVar(varName, Interval.TOP);
 				}
 				
 				// ...

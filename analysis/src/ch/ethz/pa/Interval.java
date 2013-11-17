@@ -61,4 +61,7 @@ public class Interval {
 
 	// TODO: Do you need to handle infinity or empty interval?
 	int lower, upper;
+	
+	final static int INF = 1000;
+	final static Interval TOP = new Interval(-INF, INF);
 }
