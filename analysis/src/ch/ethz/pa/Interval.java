@@ -74,8 +74,7 @@ public class Interval {
 	}
 	
 	public boolean contains(Interval other){
-		//TODO implement
-		return false;
+		return this.equals(join(this, other));
 	}
 
 	private boolean isBot() {
