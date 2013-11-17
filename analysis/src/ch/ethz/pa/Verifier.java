@@ -13,15 +13,25 @@ public class Verifier {
 		}
 		String analyzedClass = args[0];
 		SootClass c = loadClass(analyzedClass);
+		
+		boolean safe = true;
 
 	/* Use the following to iterate over the class methods. */
-		for (SootMethod method : c.getMethods()) {
-			Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()));
-			analysis.run();
-			// ....
+		try{
+			for (SootMethod method : c.getMethods()) {
+				Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()));
+				analysis.run();
+				// ....
+			}
+		}catch(ProgramIsUnsafeException e){
+			safe = false;
+			System.err.println(e.getMessage());
 		}
-		// This will be called if none of the analysis methods exits
-		System.out.println("Program is SAFE\n");
+		if (safe){
+			System.out.println("Program is SAFE\n");
+		}else {
+			System.out.println("Program is UNSAFE\n");
+		}
 	}
 	
 	private static SootClass loadClass(String name) {

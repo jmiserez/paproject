@@ -33,7 +33,13 @@ public class AllTests {
     public void testSimple() {
     	verify("MyTest");
     }
-	
+
+    @Test
+    public void testReadValueWithoutAssignment() {
+    	String result = verify("ReadValueWithoutAssignment");
+    	assertEquals(result,  "Program is SAFE\n");
+    }
+    
     @Test
     public void testAircraftControl() {
     	String result = verify("AircraftControl");
