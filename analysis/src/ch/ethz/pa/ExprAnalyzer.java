@@ -4,6 +4,7 @@ import soot.Local;
 import soot.Value;
 import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
+import soot.jimple.BinopExpr;
 import soot.jimple.IntConstant;
 import soot.jimple.MulExpr;
 import soot.jimple.SubExpr;
@@ -14,6 +15,19 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 
 	public ExprAnalyzer(StmtAnalyzer sa) {
 		this.sa = sa;
+	}
+	
+	private class Pair {
+		Interval first, second;
+		Pair() {
+			first = new Interval();
+			second = new Interval();
+		}
+		protected Pair exprToInterval(BinopExpr b) {
+			translateExpr(first, b.getOp1());
+			translateExpr(second, b.getOp2());
+			return this;
+		}
 	}
 	
     // Called for any type of value
@@ -47,29 +61,20 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	@Override
 	public void caseAddExpr(AddExpr v) {
-		Interval i1 = new Interval();
-		Interval i2 = new Interval();
-		translateExpr(i1, v.getOp1());
-		translateExpr(i2, v.getOp2());
-		res_ival.copyFrom(i1.plus(i2));
+		Pair p = new Pair().exprToInterval(v);
+		res_ival.copyFrom(p.first.plus(p.second));
 	}
 
 	@Override
 	public void caseMulExpr(MulExpr v) {
-		Interval i1 = new Interval();
-		Interval i2 = new Interval();
-		translateExpr(i1, v.getOp1());
-		translateExpr(i2, v.getOp2());
-		res_ival.copyFrom(i1.multiply(i2));
+		Pair p = new Pair().exprToInterval(v);
+		res_ival.copyFrom(p.first.multiply(p.second));
 	}
 
 	@Override
 	public void caseSubExpr(SubExpr v) {
-		Interval i1 = new Interval();
-		Interval i2 = new Interval();
-		translateExpr(i1, v.getOp1());
-		translateExpr(i2, v.getOp2());
-		res_ival.copyFrom(i1.minus(i2));
+		Pair p = new Pair().exprToInterval(v);
+		res_ival.copyFrom(p.first.minus(p.second));
 	}
 
 }
