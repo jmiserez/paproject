@@ -114,10 +114,14 @@ public class Interval {
 		return new Interval(Math.max(this.lower, i.lower), Math.min(this.upper, i.upper));
 	}
 
-	private Interval copy() {
+	public Interval copy() {
 		Interval i = new Interval();
 		i.copyFrom(this);
 		return i;
+	}
+
+	public boolean contains(Interval other) {
+        return this.equals(join(other));
 	}
 	
 	

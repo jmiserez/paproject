@@ -1,5 +1,6 @@
 package ch.ethz.pa;
 
+import soot.Local;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
@@ -7,6 +8,8 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.IntConstant;
+import soot.jimple.InvokeExpr;
+import soot.jimple.InvokeStmt;
 import soot.jimple.internal.JimpleLocal;
 
 public class StmtAnalyzer extends AbstractStmtSwitch {
@@ -49,4 +52,35 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
         }
         ea.translateExpr(rvar, rval);
     }
+
+	public Interval getLocalVariable(Local v) {
+		return currentState.getIntervalForVar(((Local)v).getName());
+	}
+
+
+	@Override
+	public void caseInvokeStmt(InvokeStmt stmt) {
+		// A method is called. e.g. AircraftControl.adjustValue
+        
+        // You need to check the parameters here.
+        InvokeExpr expr = stmt.getInvokeExpr();
+        if (expr.getMethod().getName().equals("adjustValue")) {
+                // TODO: Check that this is really the method from the AircraftControl class.
+                
+                // TODO: Check that the values are in the allowed range (we do this while computing fixpoint).
+                //System.out.println(expr.getArg(0) + " " + expr.getArg(1));
+        } else if(expr.getMethod().getName().equals("readSensor")){
+                // TODO: Check that this is really the method from the AircraftControl class.
+                checkReadSensorArgument(expr);
+        }
+	}
+	
+    protected void checkReadSensorArgument(InvokeExpr readSensor) {
+        Value v = ((InvokeExpr) readSensor).getArg(0);
+        Interval i = new Interval();
+        ea.translateExpr(i, v);
+        if (!(new Interval(0, 15).contains(i))){
+            //throw new ProgramIsUnsafeException("readSensor argument was out of range ("+i.toString()+")");
+        }
+}
 }

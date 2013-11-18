@@ -27,7 +27,7 @@ public class IntervalPerVar {
 	public void copyFrom(IntervalPerVar other) {
 		values.clear();
 		for (Map.Entry<String, Interval> entry : other.values.entrySet()) {
-			Interval n = new Interval(0);
+			Interval n = new Interval();
 			n.copyFrom(entry.getValue());
 			values.put(entry.getKey(), n);
 		}
@@ -39,12 +39,16 @@ public class IntervalPerVar {
 		}
 	}
 	
-	void putIntervalForVar(String var, Interval Interval) {
-		values.put(var, Interval);
+	void putIntervalForVar(String var, Interval interval) {
+		values.put(var, interval);
 	}
 	
 	Interval getIntervalForVar(String var) {
-		return values.get(var);
+		Interval i = values.get(var);
+		if (i == null)
+			return Interval.BOT.copy();
+		else
+			return i;
 	}
 	
 	
