@@ -44,9 +44,22 @@ public class IntervalTest {
 		assertEquals(new Interval(1, 1), Interval.join(new Interval(1, 1), new Interval(1, 1)));
 		assertEquals(new Interval(-1, 1), Interval.join(new Interval(-1, 1), new Interval(1, 1)));
 		assertEquals(new Interval(-2, 1), Interval.join(new Interval(-1, -1), new Interval(-2, 1)));
+		assertEquals(new Interval(-5, 5), Interval.join(new Interval(-5, 5), new Interval(-2, 3)));
 		assertEquals(Interval.TOP, Interval.join(new Interval(1, 1), Interval.TOP));
 		assertEquals(new Interval(1, 1), Interval.join(new Interval(1, 1), Interval.BOT));
 		assertEquals(Interval.BOT, Interval.join(Interval.BOT, Interval.BOT));
+	}
+	
+	@Test
+	public void testMeet() {
+		assertEquals(new Interval(1, 1), Interval.meet(new Interval(1, 1), new Interval(1, 1)));
+		assertEquals(new Interval(1, 1), Interval.meet(new Interval(-1, 1), new Interval(1, 1)));
+		assertEquals(new Interval(-1, -1), Interval.meet(new Interval(-1, -1), new Interval(-2, 1)));
+		assertEquals(new Interval(-2, 3), Interval.meet(new Interval(-5, 5), new Interval(-2, 3)));
+		assertEquals(new Interval(1, 1), Interval.meet(new Interval(1, 1), Interval.TOP));
+		assertEquals(Interval.BOT, Interval.meet(new Interval(1, 1), new Interval(2, 2)));
+		assertEquals(Interval.BOT, Interval.meet(new Interval(1, 1), Interval.BOT));
+		assertEquals(Interval.BOT, Interval.meet(Interval.BOT, Interval.BOT));
 	}
 
 }

@@ -5,7 +5,9 @@ import ch.ethz.pa.pair.PairEq;
 
 public class Interval {
 	// TODO: Do you need to handle infinity or empty interval?
-	private final static int INF = 10;
+	public final static int INF = 10;
+	public final static Interval TOP = new Interval(-INF, INF);
+	public final static Interval BOT = new Interval();
 	
 	protected int lower, upper;
 	protected boolean bot = false;
@@ -32,12 +34,15 @@ public class Interval {
 		Interval i = (Interval) other;
 		lower = i.lower;
 		upper = i.upper;
+		bot = i.bot;
 	}
 
 	private static Interval bounded(Interval i) {
-		i.lower = Math.max(i.lower, -INF);
-		i.upper = Math.min(i.upper, INF);
-		return i;
+		// TODO: Be more precise
+		if (i.lower < -INF || i.upper > INF)
+			return TOP.copy();
+		else
+			return i;
 	}
 	
 	private void set(int min, int max) {
@@ -92,33 +97,30 @@ public class Interval {
 	public Interval join(Interval a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
-		if (this.equals(getBot()))
-			return i;
-		if (i.equals(getBot()))
-			return this;
+		if (this.equals(BOT))
+			return i.copy();
+		if (i.equals(BOT))
+			return this.copy();
 		return bounded(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
 	}
 
 	public Interval meet(Interval a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
-		if (this.equals(getBot()))
-			return getBot();
-		if (i.equals(getBot()))
-			return getBot();
+		if (this.equals(BOT))
+			return BOT.copy();
+		if (i.equals(BOT))
+			return BOT.copy();
 		if (this.lower > i.upper || i.lower > this.upper)
 			return null;
 		return new Interval(Math.max(this.lower, i.lower), Math.min(this.upper, i.upper));
 	}
 
-	public Interval getTop() {
-		return new Interval(-INF, INF);
+	private Interval copy() {
+		Interval i = new Interval();
+		i.copyFrom(this);
+		return i;
 	}
-
-	public Interval getBot() {
-		return new Interval();
-	}
-	
 	
 	
 }
