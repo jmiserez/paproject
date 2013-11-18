@@ -1,7 +1,5 @@
 package ch.ethz.pa;
 
-import ch.ethz.pa.pair.Pair;
-import ch.ethz.pa.pair.PairEq;
 
 public class Interval {
 	// TODO: Do you need to handle infinity or empty interval?

@@ -2,8 +2,6 @@ package ch.ethz.pa;
 
 import java.util.List;
 
-import ch.ethz.pa.pair.PairEq;
-import ch.ethz.pa.pair.PairNEq;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.*;
@@ -45,7 +43,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		IntervalPerVar branchState = new IntervalPerVar();
 		branchState.copyFrom(current);
 		
-		s.apply(new StmtVisitor(fallState, branchState));
+		s.apply(new StmtAnalyzer(current, fallState, branchState));
 		
 		// TODO: Maybe avoid copying objects too much. Feel free to optimize.
 		for (IntervalPerVar fnext : fallOut) {

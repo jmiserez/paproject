@@ -5,8 +5,6 @@ import java.util.Map;
 import soot.jimple.BinopExpr;
 import soot.jimple.IntConstant;
 import soot.jimple.internal.JimpleLocal;
-import ch.ethz.pa.pair.Pair;
-import ch.ethz.pa.pair.PairEq;
 
 public class IntervalPerVar {
 	public IntervalPerVar() {
