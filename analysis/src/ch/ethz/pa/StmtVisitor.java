@@ -3,16 +3,21 @@ package ch.ethz.pa;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
+import soot.jimple.DefinitionStmt;
 import soot.jimple.IfStmt;
+import soot.jimple.IntConstant;
+import soot.jimple.internal.JimpleLocal;
 
 public class StmtVisitor extends AbstractStmtSwitch {
 	
 	private IntervalPerVar fallState;
 	private IntervalPerVar branchState;
+	private IntervalPerVar currentState;
 
-	public StmtVisitor(IntervalPerVar fallState, IntervalPerVar branchState) {
+	public StmtVisitor(IntervalPerVar currentState, IntervalPerVar fallState, IntervalPerVar branchState) {
 		this.fallState = fallState;
 		this.branchState = branchState;
+		this.currentState = currentState;
 	}
 
 	@Override
@@ -21,24 +26,22 @@ public class StmtVisitor extends AbstractStmtSwitch {
         condition.apply(this);
 	}
 	
-
-	
-	AbstractDomain tryGetIntervalForValue(IntervalPerVar currentState, Value v) {
+	Interval tryGetIntervalForValue(Value v) {
 		if (v instanceof IntConstant) {
 			IntConstant c = ((IntConstant)v);
-			return new Interval(c.value, c.value);
+			return new Interval(c.value);
 		} else if (v instanceof JimpleLocal) {
 			JimpleLocal l = ((JimpleLocal)v);
 			return currentState.getIntervalForVar(l.getName());
 		}
-		return AbstractDomain.TOP;
+		return Interval.TOP;
 	}
 
 	@Override
 	public void caseAssignStmt(AssignStmt stmt) {
-		Value left = stmt.getLeftOp();
-		Value right = stmt.getRightOp();
-		System.out.println(left.getClass().getName() + " " + right.getClass().getName());
+		Value lval = stmt.getLeftOp();
+		Value rval = stmt.getRightOp();
+		System.out.println(lval.getClass().getName() + " " + rval.getClass().getName());
 		
 		// You do not need to handle these cases:
 		if ((!(left instanceof StaticFieldRef))
@@ -87,6 +90,24 @@ public class StmtVisitor extends AbstractStmtSwitch {
 			// ...
 		}
 	}
+	
+	void handleAssign(DefinitionStmt stmt) {
+        Value lval = stmt.getLeftOp();
+        Value rval = stmt.getRightOp();
+        Variable rvar;
+        if (lval instanceof Local) {
+            rvar = getLocalVariable((Local)lval);
+        } else {
+            rvar = jt.makeVariable(rval);
+        }
+        et.translateExpr(rvar, stmt.getRightOpBox());
+        if (lval instanceof ArrayRef) {
+            notSupported("We do not support arrays");
+        } else if (lval instanceof FieldRef) {
+            notSupported("We do not support field references");
+        }
+    }
+
 	
 
 }
