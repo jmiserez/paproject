@@ -110,7 +110,7 @@ public class Interval {
 		if (i.equals(BOT))
 			return BOT.copy();
 		if (this.lower > i.upper || i.lower > this.upper)
-			return null;
+			return BOT.copy();
 		return new Interval(Math.max(this.lower, i.lower), Math.min(this.upper, i.upper));
 	}
 
