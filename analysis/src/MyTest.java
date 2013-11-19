@@ -13,12 +13,13 @@ public class MyTest {
 		int x = 5;
 		int y = 7;
 		int z = x;
-		int w = x - y + 5 + x * y;
+		AircraftControl ac = new AircraftControl();
+		int value = ac.readSensor(0); //value: [0, 15]
 		while (i >= 0) {
 			y++;
 			i = i - 1;
 		}
-		if (y == 6)
+		if (y != 6)
 			System.out.println("Launch rocket");
 	}
 }

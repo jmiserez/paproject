@@ -45,6 +45,12 @@ public class IntervalPerVar {
 		}
 	}
 	
+	public static void meet(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
+		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
+			trg.putIntervalForVar(entry.getKey(), entry.getValue().meet(src2.getIntervalForVar(entry.getKey())));
+		}
+	}
+	
 	void putIntervalForVar(String var, Interval interval) {
 		values.put(var, interval);
 	}

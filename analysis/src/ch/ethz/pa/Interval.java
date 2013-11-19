@@ -1,5 +1,7 @@
 package ch.ethz.pa;
 
+import soot.toolkits.scalar.Pair;
+
 
 public class Interval {
 	// TODO: Do you need to handle infinity or empty interval?
@@ -124,12 +126,12 @@ public class Interval {
         return this.equals(join(other));
 	}
 	
-	public static Interval pairEq(Interval i1, Interval i2) {
-		return i1.meet(i2);
+	public static Pair<Interval, Interval> pairEq(Interval i1, Interval i2) {
+		return new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
 	}
-	
-	public static Interval pairNe(Interval i1, Interval i2) {
-		return i1.join(i2);
+
+	public static Pair<Interval, Interval> pairNe(Interval i1, Interval i2) {
+		return new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
 	}
 	
 }

@@ -8,7 +8,9 @@ import soot.jimple.BinopExpr;
 import soot.jimple.EqExpr;
 import soot.jimple.IntConstant;
 import soot.jimple.MulExpr;
+import soot.jimple.NeExpr;
 import soot.jimple.SubExpr;
+import soot.toolkits.scalar.Pair;
 
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	StmtAnalyzer sa;
@@ -90,10 +92,26 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	public void caseEqExpr(EqExpr v) {
 		Value a1 = v.getOp1(),
 			  a2 = v.getOp2();
-		Interval r1 = Interval.pairEq(valueToInterval(a1), valueToInterval(a2)),
-				 r2 = Interval.pairNe(valueToInterval(a1), valueToInterval(a2));
+		Pair<Interval, Interval> p = Interval.pairEq(valueToInterval(a1), valueToInterval(a2));
+		Interval r1 = p.getO1(),
+				 r2 = p.getO2();
 		IntervalPerVar s1 = select(a1, r1, sa.currentState);
 		IntervalPerVar s2 = select(a2, r2, sa.currentState);
+		IntervalPerVar.meet(s1, s2, sa.fallState);
+		IntervalPerVar.meet(s1, s2, sa.branchState);
+	}
+
+	@Override
+	public void caseNeExpr(NeExpr v) {
+		Value a1 = v.getOp1(),
+			  a2 = v.getOp2();
+		Pair<Interval, Interval> p = Interval.pairNe(valueToInterval(a1), valueToInterval(a2));
+		Interval r1 = p.getO1(),
+				 r2 = p.getO2();
+		IntervalPerVar s1 = select(a1, r1, sa.currentState);
+		IntervalPerVar s2 = select(a2, r2, sa.currentState);
+		IntervalPerVar.meet(s1, s2, sa.fallState);
+		IntervalPerVar.meet(s1, s2, sa.branchState);
 	}
 	
 	private static class SelectSwitch extends AbstractJimpleValueSwitch {
