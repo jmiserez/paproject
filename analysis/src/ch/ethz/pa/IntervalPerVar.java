@@ -2,6 +2,10 @@ package ch.ethz.pa;
 import java.util.HashMap;
 import java.util.Map;
 
+import soot.jimple.BinopExpr;
+import soot.jimple.IntConstant;
+import soot.jimple.internal.JimpleLocal;
+
 public class IntervalPerVar {
 	public IntervalPerVar() {
 		values = new HashMap<String, Interval>();
@@ -23,7 +27,7 @@ public class IntervalPerVar {
 	public void copyFrom(IntervalPerVar other) {
 		values.clear();
 		for (Map.Entry<String, Interval> entry : other.values.entrySet()) {
-			Interval n = new Interval(0);
+			Interval n = new Interval();
 			n.copyFrom(entry.getValue());
 			values.put(entry.getKey(), n);
 		}
@@ -31,17 +35,22 @@ public class IntervalPerVar {
 	
 	public static void join(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
-			trg.putIntervalForVar(entry.getKey(), Interval.join(entry.getValue(), src2.getIntervalForVar(entry.getKey())));
+			trg.putIntervalForVar(entry.getKey(), entry.getValue().join(src2.getIntervalForVar(entry.getKey())));
 		}
 	}
 	
-	void putIntervalForVar(String var, Interval i) {
-		values.put(var, i);
+	void putIntervalForVar(String var, Interval interval) {
+		values.put(var, interval);
 	}
 	
 	Interval getIntervalForVar(String var) {
-		return values.get(var);
+		Interval i = values.get(var);
+		if (i == null)
+			return Interval.BOT.copy();
+		else
+			return i;
 	}
+	
 	
 	@Override
 	public boolean equals(Object o) {
@@ -50,4 +59,5 @@ public class IntervalPerVar {
 	}
 	
 	private HashMap<String, Interval> values;
+
 }

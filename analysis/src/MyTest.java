@@ -12,11 +12,12 @@ public class MyTest {
 	private static void test1(int i) {
 		int x = 5;
 		int y = 7;
+		int z = y;
 		while (i >= 0) {
 			y++;
 			i = i - 1;
 		}
-		if (y < 7)
+		if (y == 6)
 			System.out.println("Launch rocket");
 	}
 }

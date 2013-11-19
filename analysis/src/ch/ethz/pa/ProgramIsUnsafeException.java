@@ -9,6 +9,4 @@ public class ProgramIsUnsafeException extends RuntimeException {
 	public ProgramIsUnsafeException(String reason) {
 		super(reason);
 	}
-	
-
 }

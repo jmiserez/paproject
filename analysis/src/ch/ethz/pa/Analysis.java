@@ -3,23 +3,7 @@ package ch.ethz.pa;
 import java.util.List;
 
 import soot.Unit;
-import soot.Value;
-import soot.jimple.AddExpr;
-import soot.jimple.BinopExpr;
-import soot.jimple.CmpExpr;
-import soot.jimple.DefinitionStmt;
-import soot.jimple.IfStmt;
-import soot.jimple.IntConstant;
-import soot.jimple.InvokeExpr;
-import soot.jimple.MulExpr;
-import soot.jimple.StaticFieldRef;
 import soot.jimple.Stmt;
-import soot.jimple.SubExpr;
-import soot.jimple.internal.JArrayRef;
-import soot.jimple.internal.JIfStmt;
-import soot.jimple.internal.JInstanceFieldRef;
-import soot.jimple.internal.JInvokeStmt;
-import soot.jimple.internal.JimpleLocal;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
 
@@ -53,94 +37,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		IntervalPerVar branchState = new IntervalPerVar();
 		branchState.copyFrom(current);
 		
-		if (s instanceof DefinitionStmt) {
-			DefinitionStmt sd = (DefinitionStmt) s;
-			Value left = sd.getLeftOp();
-			Value right = sd.getRightOp();
-			System.out.println(left.getClass().getName() + " " + right.getClass().getName());
-			
-			// You do not need to handle these cases:
-			if ((!(left instanceof StaticFieldRef))
-					&& (!(left instanceof JimpleLocal))
-					&& (!(left instanceof JArrayRef))
-					&& (!(left instanceof JInstanceFieldRef)))
-				unhandled("1: Assignment to non-variables is not handled.");
-			else if ((left instanceof JArrayRef)
-					&& (!((((JArrayRef) left).getBase()) instanceof JimpleLocal)))
-				unhandled("2: Assignment to a non-local array variable is not handled.");
-
-			// TODO: Handle other cases. For example:
-
-			if (left instanceof JimpleLocal) {
-				String varName = ((JimpleLocal)left).getName();
-				
-				if (right instanceof IntConstant) {
-					IntConstant c = ((IntConstant)right);
-					fallState.putIntervalForVar(varName, new Interval(c.value, c.value));
-				} else if (right instanceof JimpleLocal) {
-					JimpleLocal l = ((JimpleLocal)right);
-					fallState.putIntervalForVar(varName, current.getIntervalForVar(l.getName()));
-				} else if (right instanceof BinopExpr) {
-					Value r1 = ((BinopExpr) right).getOp1();
-					Value r2 = ((BinopExpr) right).getOp2();
-					
-					Interval i1 = tryGetIntervalForValue(current, r1);
-					Interval i2 = tryGetIntervalForValue(current, r2);
-					
-					if (i1 != null && i2 != null) {
-						// Implement transformers.
-						if (right instanceof AddExpr) {
-							fallState.putIntervalForVar(varName, Interval.plus(i1, i2));
-						}
-						if (right instanceof SubExpr) {
-							fallState.putIntervalForVar(varName, Interval.minus(i1, i2));
-						}
-						if (right instanceof MulExpr) {
-							fallState.putIntervalForVar(varName, Interval.multiply(i1, i2));
-						}
-					}
-				} else if (right instanceof InvokeExpr) {
-					InvokeExpr expr = (InvokeExpr) right;
-					if(expr.getMethod().getName().equals("readSensor")){
-						// TODO: Check that this is really the method from the AircraftControl class.
-						checkReadSensorArgument(current,expr);
-						fallState.putIntervalForVar(varName, new Interval(0, 15));
-					}
-				} else {
-					fallState.putIntervalForVar(varName, Interval.TOP);
-				}
-				
-				// ...
-			}
-			// ...
-		} else if (s instanceof JIfStmt) {
-			IfStmt is = (IfStmt) s;
-            Value condition = is.getCondition();
-            if (condition instanceof BinopExpr) {
-
-                BinopExpr binopExpr = (BinopExpr) condition;
-
-                Value a1 = binopExpr.getOp1();
-                Value a2 = binopExpr.getOp2();
-                if (binopExpr instanceof CmpExpr) {
-                	
-                }
-            }
-		} else if (s instanceof JInvokeStmt) {
-			// A method is called. e.g. AircraftControl.adjustValue
-			
-			// You need to check the parameters here.
-			InvokeExpr expr = s.getInvokeExpr();
-			if (expr.getMethod().getName().equals("adjustValue")) {
-				// TODO: Check that this is really the method from the AircraftControl class.
-				
-				// TODO: Check that the values are in the allowed range (we do this while computing fixpoint).
-				//System.out.println(expr.getArg(0) + " " + expr.getArg(1));
-			} else if(expr.getMethod().getName().equals("readSensor")){
-				// TODO: Check that this is really the method from the AircraftControl class.
-				checkReadSensorArgument(current,expr);
-			}
-		}
+		s.apply(new StmtAnalyzer(current, fallState, branchState));
 		
 		// TODO: Maybe avoid copying objects too much. Feel free to optimize.
 		for (IntervalPerVar fnext : fallOut) {
@@ -153,25 +50,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 				fnext.copyFrom(branchState);
 			}
 		}		
-	}
-	
-	protected void checkReadSensorArgument(IntervalPerVar currentState, InvokeExpr readSensor){
-		Value v = ((InvokeExpr) readSensor).getArg(0);
-		Interval i = tryGetIntervalForValue(currentState, v);
-		if (!(new Interval(0, 15).contains(i))){
-			throw new ProgramIsUnsafeException("readSensor argument was out of range ("+i.toString()+")");
-		}
-	}
-	
-	Interval tryGetIntervalForValue(IntervalPerVar currentState, Value v) {
-		if (v instanceof IntConstant) {
-			IntConstant c = ((IntConstant)v);
-			return new Interval(c.value, c.value);
-		} else if (v instanceof JimpleLocal) {
-			JimpleLocal l = ((JimpleLocal)v);
-			return currentState.getIntervalForVar(l.getName());
-		}
-		return Interval.TOP;
 	}
 
 	@Override
