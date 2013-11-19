@@ -28,7 +28,8 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 
 	@Override
 	public void caseIfStmt(IfStmt stmt) {
-		// TODO: Write this
+		Value condition = stmt.getCondition();
+		
 	}
 
 	@Override
@@ -50,7 +51,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 			String varName = ((JimpleLocal)lval).getName();
 			fallState.putIntervalForVar(varName, rvar);
 		}
-		ea.translateExpr(rvar, rval);
+		ea.valueToInterval(rvar, rval);
 	}
 
 	public Interval getLocalVariable(Local v) {
@@ -78,7 +79,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	protected void checkReadSensorArgument(InvokeExpr readSensor) {
 		Value v = ((InvokeExpr) readSensor).getArg(0);
 		Interval i = new Interval();
-		ea.translateExpr(i, v);
+		ea.valueToInterval(i, v);
 		if (!(new Interval(0, 15).contains(i))){
 			//throw new ProgramIsUnsafeException("readSensor argument was out of range ("+i.toString()+")");
 		}
