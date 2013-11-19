@@ -35,7 +35,7 @@ public class Interval {
 		bot = i.bot;
 	}
 
-	private static Interval bounded(Interval i) {
+	private static Interval handleOverflow(Interval i) {
 		// TODO: Be more precise
 		if (i.lower < -INF || i.upper > INF)
 			return TOP.copy();
@@ -67,14 +67,14 @@ public class Interval {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow. 
-		return bounded(new Interval(this.lower + i.lower, this.upper + i.upper));
+		return handleOverflow(new Interval(this.lower + i.lower, this.upper + i.upper));
 	}
 
 	public Interval minus(Interval a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow. 
-		return bounded(new Interval(this.lower - i.lower, this.upper - i.upper));
+		return handleOverflow(new Interval(this.lower - i.lower, this.upper - i.upper));
 	}
 
 	public Interval multiply(Interval a) {
@@ -89,7 +89,7 @@ public class Interval {
 		// To handle case [-2, -1] * [-2, -1]
 		if (this.upper < 0 && i.upper < 0 && (this.upper >= 0 || i.upper >= 0))
 			newUpper *= -1;
-		return bounded(new Interval(newLower, newUpper));
+		return handleOverflow(new Interval(newLower, newUpper));
 	}
 
 	public Interval join(Interval a) {
@@ -99,7 +99,7 @@ public class Interval {
 			return i.copy();
 		if (i.equals(BOT))
 			return this.copy();
-		return bounded(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
+		return handleOverflow(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
 	}
 
 	public Interval meet(Interval a) {
@@ -124,5 +124,12 @@ public class Interval {
         return this.equals(join(other));
 	}
 	
+	public static Interval pairEq(Interval i1, Interval i2) {
+		return i1.meet(i2);
+	}
+	
+	public static Interval pairNe(Interval i1, Interval i2) {
+		return i1.join(i2);
+	}
 	
 }

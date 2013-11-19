@@ -14,9 +14,9 @@ import soot.jimple.internal.JimpleLocal;
 
 public class StmtAnalyzer extends AbstractStmtSwitch {
 
-	private IntervalPerVar fallState;
-	private IntervalPerVar branchState;
-	private IntervalPerVar currentState;
+	protected IntervalPerVar fallState;
+	protected IntervalPerVar branchState;
+	protected IntervalPerVar currentState;
 	private ExprAnalyzer ea;
 
 	public StmtAnalyzer(IntervalPerVar currentState, IntervalPerVar fallState, IntervalPerVar branchState) {

@@ -33,6 +33,12 @@ public class IntervalPerVar {
 		}
 	}
 	
+	public IntervalPerVar copy() {
+		IntervalPerVar ipv = new IntervalPerVar();
+		ipv.copyFrom(this);
+		return ipv;
+	}
+	
 	public static void join(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
 			trg.putIntervalForVar(entry.getKey(), entry.getValue().join(src2.getIntervalForVar(entry.getKey())));

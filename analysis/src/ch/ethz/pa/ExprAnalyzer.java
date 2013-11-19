@@ -88,6 +88,41 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 
 	@Override
 	public void caseEqExpr(EqExpr v) {
+		Value a1 = v.getOp1(),
+			  a2 = v.getOp2();
+		Interval r1 = Interval.pairEq(valueToInterval(a1), valueToInterval(a2)),
+				 r2 = Interval.pairNe(valueToInterval(a1), valueToInterval(a2));
+		IntervalPerVar s1 = select(a1, r1, sa.currentState);
+		IntervalPerVar s2 = select(a2, r2, sa.currentState);
+	}
+	
+	private static class SelectSwitch extends AbstractJimpleValueSwitch {
+		IntervalPerVar result;
+		private Interval r;
+		private IntervalPerVar m;
 		
+		SelectSwitch(Interval r, IntervalPerVar m) {
+			this.r = r;
+			this.m = m;
+		}
+		@Override
+		public void caseIntConstant(IntConstant a) {
+			result = new IntervalPerVar(); // BOT
+		}
+		
+		@Override
+		public void caseLocal(Local a) {
+			result = m.copy();
+			String varName = a.getName();
+			Interval ma = m.getIntervalForVar(varName);
+			Interval b = r.meet(ma);
+			m.putIntervalForVar(varName, b);
+		}
+	}
+	
+	public static IntervalPerVar select(Value a, Interval r, IntervalPerVar m) {
+		SelectSwitch s = new SelectSwitch(r, m);
+		a.apply(s);
+		return s.result;
 	}
 }

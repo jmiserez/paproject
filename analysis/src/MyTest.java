@@ -12,7 +12,8 @@ public class MyTest {
 	private static void test1(int i) {
 		int x = 5;
 		int y = 7;
-		int z = y;
+		int z = x;
+		int w = x - y + 5 + x * y;
 		while (i >= 0) {
 			y++;
 			i = i - 1;
