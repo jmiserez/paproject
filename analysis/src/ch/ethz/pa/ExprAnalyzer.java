@@ -20,19 +20,6 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		this.sa = sa;
 	}
 	
-	private class Pair {
-		Interval first, second;
-		Pair() {
-			first = new Interval();
-			second = new Interval();
-		}
-		protected Pair exprToInterval(BinopExpr b) {
-			valueToInterval(first, b.getOp1());
-			valueToInterval(second, b.getOp2());
-			return this;
-		}
-	}
-	
 	public class Restriction {
 		String varName;
 		Interval fallRes, branchRes;
@@ -86,25 +73,21 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	@Override
 	public void caseAddExpr(AddExpr v) {
-		Pair p = new Pair().exprToInterval(v);
-		res_ival.copyFrom(p.first.plus(p.second));
+		res_ival.copyFrom(valueToInterval(v.getOp1()).plus(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseMulExpr(MulExpr v) {
-		Pair p = new Pair().exprToInterval(v);
-		res_ival.copyFrom(p.first.multiply(p.second));
+		res_ival.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseSubExpr(SubExpr v) {
-		Pair p = new Pair().exprToInterval(v);
-		res_ival.copyFrom(p.first.minus(p.second));
+		res_ival.copyFrom(valueToInterval(v.getOp1()).multiply(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseEqExpr(EqExpr v) {
-		Pair p = new Pair().exprToInterval(v);
 		
 	}
 }
