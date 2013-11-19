@@ -1,5 +1,12 @@
 package ch.ethz.pa;
 
+import soot.jimple.AbstractJimpleValueSwitch;
+import soot.jimple.EqExpr;
+import soot.jimple.GeExpr;
+import soot.jimple.GtExpr;
+import soot.jimple.LeExpr;
+import soot.jimple.LtExpr;
+import soot.jimple.NeExpr;
 import soot.toolkits.scalar.Pair;
 
 
@@ -126,12 +133,47 @@ public class Interval {
         return this.equals(join(other));
 	}
 	
-	public static Pair<Interval, Interval> pairEq(Interval i1, Interval i2) {
-		return new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
-	}
+	protected static class PairSwitch extends AbstractJimpleValueSwitch {
+		Pair<Interval, Interval> fallOut, branchOut;
+		Interval i1, i2;
 
-	public static Pair<Interval, Interval> pairNe(Interval i1, Interval i2) {
-		return new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+		/* 
+		 *  For each case store fall-out pair in fallOut and branch-out pair in branchOut
+		 */
+		PairSwitch(Interval i1, Interval i2) {
+			this.i1 = i1;
+			this.i2 = i2;
+		}
+		
+		@Override
+		public void caseEqExpr(EqExpr v) {
+			fallOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
+			branchOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+		}
+		@Override
+		public void caseNeExpr(NeExpr v) {
+			fallOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+			branchOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
+		}
+		@Override
+		public void caseGeExpr(GeExpr v) {
+			// TODO Auto-generated method stub
+			super.caseGeExpr(v);
+		}
+		@Override
+		public void caseGtExpr(GtExpr v) {
+			// TODO Auto-generated method stub
+			super.caseGtExpr(v);
+		}
+		@Override
+		public void caseLeExpr(LeExpr v) {
+			// TODO Auto-generated method stub
+			super.caseLeExpr(v);
+		}
+		@Override
+		public void caseLtExpr(LtExpr v) {
+			// TODO Auto-generated method stub
+			super.caseLtExpr(v);
+		}
 	}
-	
 }

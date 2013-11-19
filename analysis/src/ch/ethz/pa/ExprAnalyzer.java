@@ -1,12 +1,18 @@
 package ch.ethz.pa;
 
+import ch.ethz.pa.Interval.PairSwitch;
 import soot.Local;
 import soot.Value;
 import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
 import soot.jimple.BinopExpr;
+import soot.jimple.ConditionExpr;
 import soot.jimple.EqExpr;
+import soot.jimple.GeExpr;
+import soot.jimple.GtExpr;
 import soot.jimple.IntConstant;
+import soot.jimple.LeExpr;
+import soot.jimple.LtExpr;
 import soot.jimple.MulExpr;
 import soot.jimple.NeExpr;
 import soot.jimple.SubExpr;
@@ -14,106 +20,133 @@ import soot.toolkits.scalar.Pair;
 
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	StmtAnalyzer sa;
-	Interval res_ival;
-	Restriction r1, r2;
+	Interval result;
 	
-
+	/*
+	 * Expression visitor, result is stored in local variable result
+	 */
 	public ExprAnalyzer(StmtAnalyzer sa) {
 		this.sa = sa;
 	}
 	
-	public class Restriction {
-		String varName;
-		Interval fallRes, branchRes;
-	}
-	
-    // Called for any type of value
+    /*
+     * Called for any type of value
+     */
     public void valueToInterval(Interval ival, Value val) {
-        Interval temp = res_ival;
-        res_ival = ival;
+        Interval temp = result;
+        result = ival;
         val.apply(this);
-        res_ival = temp;
+        result = temp;
     }
     
-    // Called for any type of value
+    /*
+     * Called for any type of value
+     */
     public Interval valueToInterval(Value val) {
-        Interval temp = res_ival;
-        Interval ret = res_ival = new Interval();
+        Interval temp = result;
+        Interval ret = result = new Interval();
         val.apply(this);
-        res_ival = temp;
+        result = temp;
         return ret;
     }
     
-    // Called for any type of value
+    /*
+     * Called for any type of value
+     */
     public void binExprToState(IntervalPerVar ipv, Value val) {
-        Interval temp = res_ival;
-        res_ival = new Interval();
+        Interval temp = result;
+        result = new Interval();
         val.apply(this);
-        res_ival = temp;
+        result = temp;
     }
     
 	@Override
 	public void caseIntConstant(IntConstant v) {
-		res_ival.copyFrom(new Interval(v.value));
+		result.copyFrom(new Interval(v.value));
 	}
 
-	/* (non-Javadoc)
-	 * @see soot.jimple.AbstractJimpleValueSwitch#caseLocal(soot.Local)
-	 */
 	@Override
 	public void caseLocal(Local v) {
-		res_ival.copyFrom(sa.getLocalVariable(v));
+		result.copyFrom(sa.getLocalVariable(v));
 	}
 
 	@Override
 	public void defaultCase(Object v) {
-		res_ival = Interval.BOT;
+		result = Interval.BOT;
 	}
 
-	/* (non-Javadoc)
-	 * @see soot.jimple.AbstractJimpleValueSwitch#caseAddExpr(soot.jimple.AddExpr)
-	 */
 	@Override
 	public void caseAddExpr(AddExpr v) {
-		res_ival.copyFrom(valueToInterval(v.getOp1()).plus(valueToInterval(v.getOp2())));
+		result.copyFrom(valueToInterval(v.getOp1()).plus(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseMulExpr(MulExpr v) {
-		res_ival.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
+		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseSubExpr(SubExpr v) {
-		res_ival.copyFrom(valueToInterval(v.getOp1()).multiply(valueToInterval(v.getOp2())));
+		result.copyFrom(valueToInterval(v.getOp1()).multiply(valueToInterval(v.getOp2())));
 	}
 
 	@Override
 	public void caseEqExpr(EqExpr v) {
-		Value a1 = v.getOp1(),
-			  a2 = v.getOp2();
-		Pair<Interval, Interval> p = Interval.pairEq(valueToInterval(a1), valueToInterval(a2));
-		Interval r1 = p.getO1(),
-				 r2 = p.getO2();
-		IntervalPerVar s1 = select(a1, r1, sa.currentState);
-		IntervalPerVar s2 = select(a2, r2, sa.currentState);
-		IntervalPerVar.meet(s1, s2, sa.fallState);
-		IntervalPerVar.meet(s1, s2, sa.branchState);
+		doCondExpr(v);
 	}
 
 	@Override
 	public void caseNeExpr(NeExpr v) {
-		Value a1 = v.getOp1(),
-			  a2 = v.getOp2();
-		Pair<Interval, Interval> p = Interval.pairNe(valueToInterval(a1), valueToInterval(a2));
+		doCondExpr(v);
+	}
+	
+	@Override
+	public void caseGeExpr(GeExpr v) {
+		doCondExpr(v);
+	}
+
+	@Override
+	public void caseGtExpr(GtExpr v) {
+		doCondExpr(v);
+	}
+
+	@Override
+	public void caseLeExpr(LeExpr v) {
+		doCondExpr(v);
+	}
+
+	@Override
+	public void caseLtExpr(LtExpr v) {
+		doCondExpr(v);
+	}
+
+	/*
+	 * Calculate and update states based on the condition.
+	 */
+	private void doCondExpr(ConditionExpr c) {
+		Value a1 = c.getOp1(),
+			  a2 = c.getOp2();
+		PairSwitch ps = new Interval.PairSwitch(valueToInterval(a1), valueToInterval(a2));
+		c.apply(ps);
+		
+		Pair<Interval, Interval> p = ps.fallOut;
 		Interval r1 = p.getO1(),
 				 r2 = p.getO2();
 		IntervalPerVar s1 = select(a1, r1, sa.currentState);
 		IntervalPerVar s2 = select(a2, r2, sa.currentState);
 		IntervalPerVar.meet(s1, s2, sa.fallState);
+		
+		p = ps.branchOut;
+		r1 = p.getO1();
+	    r2 = p.getO2();
+		s1 = select(a1, r1, sa.currentState);
+		s2 = select(a2, r2, sa.currentState);
 		IntervalPerVar.meet(s1, s2, sa.branchState);
 	}
 	
+	/*
+	 * Visitor for the switch function
+	 */
 	private static class SelectSwitch extends AbstractJimpleValueSwitch {
 		IntervalPerVar result;
 		private Interval r;
@@ -138,6 +171,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		}
 	}
 	
+	/*
+	 * Switch function from lecture notes.
+	 */
 	public static IntervalPerVar select(Value a, Interval r, IntervalPerVar m) {
 		SelectSwitch s = new SelectSwitch(r, m);
 		a.apply(s);
