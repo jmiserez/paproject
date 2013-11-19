@@ -5,6 +5,7 @@ import soot.Value;
 import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
 import soot.jimple.BinopExpr;
+import soot.jimple.EqExpr;
 import soot.jimple.IntConstant;
 import soot.jimple.MulExpr;
 import soot.jimple.SubExpr;
@@ -12,6 +13,8 @@ import soot.jimple.SubExpr;
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	StmtAnalyzer sa;
 	Interval res_ival;
+	Restriction r1, r2;
+	
 
 	public ExprAnalyzer(StmtAnalyzer sa) {
 		this.sa = sa;
@@ -24,20 +27,42 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 			second = new Interval();
 		}
 		protected Pair exprToInterval(BinopExpr b) {
-			translateExpr(first, b.getOp1());
-			translateExpr(second, b.getOp2());
+			valueToInterval(first, b.getOp1());
+			valueToInterval(second, b.getOp2());
 			return this;
 		}
 	}
 	
+	public class Restriction {
+		String varName;
+		Interval fallRes, branchRes;
+	}
+	
     // Called for any type of value
-    public void translateExpr(Interval ival, Value val) {
+    public void valueToInterval(Interval ival, Value val) {
         Interval temp = res_ival;
         res_ival = ival;
         val.apply(this);
         res_ival = temp;
     }
-
+    
+    // Called for any type of value
+    public Interval valueToInterval(Value val) {
+        Interval temp = res_ival;
+        Interval ret = res_ival = new Interval();
+        val.apply(this);
+        res_ival = temp;
+        return ret;
+    }
+    
+    // Called for any type of value
+    public void binExprToState(IntervalPerVar ipv, Value val) {
+        Interval temp = res_ival;
+        res_ival = new Interval();
+        val.apply(this);
+        res_ival = temp;
+    }
+    
 	@Override
 	public void caseIntConstant(IntConstant v) {
 		res_ival.copyFrom(new Interval(v.value));
@@ -77,4 +102,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		res_ival.copyFrom(p.first.minus(p.second));
 	}
 
+	@Override
+	public void caseEqExpr(EqExpr v) {
+		Pair p = new Pair().exprToInterval(v);
+		
+	}
 }
