@@ -11,15 +11,20 @@ public class MyTest {
 	}
 	private static void test1(int i) {
 		int x = 5;
-		int y = 7;
-		int z = x;
-		AircraftControl ac = new AircraftControl();
-		int value = ac.readSensor(0); //value: [0, 15]
-		while (i >= 0) {
-			y++;
-			i = i - 1;
-		}
-		if (y != 6)
+		int y = 3;
+		//int z = x;
+		//AircraftControl ac = new AircraftControl();
+		//int value = ac.readSensor(0); //value: [0, 15]
+		//while (i >= 0) {
+		//	y++;
+		//	i = i - 1;
+		//}
+		if (i == 6)
 			System.out.println("Launch rocket");
+		else
+			System.out.println("Do not launch rocket");
+		System.out.println("Finished");
+		i = 2;
+		
 	}
 }
