@@ -28,8 +28,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 
 	@Override
 	public void caseIfStmt(IfStmt stmt) {
-		Value condition = stmt.getCondition();
-		
+		stmt.getCondition().apply(ea);
 	}
 
 	@Override

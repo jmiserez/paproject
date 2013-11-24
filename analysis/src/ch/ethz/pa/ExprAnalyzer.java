@@ -15,7 +15,9 @@ import soot.jimple.LeExpr;
 import soot.jimple.LtExpr;
 import soot.jimple.MulExpr;
 import soot.jimple.NeExpr;
+import soot.jimple.ParameterRef;
 import soot.jimple.SubExpr;
+import soot.jimple.ThisRef;
 import soot.toolkits.scalar.Pair;
 
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
@@ -29,6 +31,13 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		this.sa = sa;
 	}
 	
+	/*
+	 * Getter for the result value of the .apply(ea)
+	 */
+	public Interval getResult() {
+		return result;
+	}
+	
     /*
      * Called for any type of value
      */
@@ -36,6 +45,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
         Interval temp = result;
         result = ival;
         val.apply(this);
+        ival.copyFrom(result);
         result = temp;
     }
     
@@ -70,9 +80,12 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		result.copyFrom(sa.getLocalVariable(v));
 	}
 
+	/*
+	 * Go to TOP for unhandled cases
+	 */
 	@Override
 	public void defaultCase(Object v) {
-		result = Interval.BOT;
+		result = Interval.TOP;
 	}
 
 	@Override
