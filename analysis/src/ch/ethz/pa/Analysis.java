@@ -29,13 +29,15 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	protected void flowThrough(IntervalPerVar current, Unit op, List<IntervalPerVar> fallOut,
 			List<IntervalPerVar> branchOuts) {
 		// TODO: This can be optimized.
-		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      state: " + current);
 	
 		Stmt s = (Stmt)op;
 		IntervalPerVar fallState = new IntervalPerVar();
 		fallState.copyFrom(current);
 		IntervalPerVar branchState = new IntervalPerVar();
 		branchState.copyFrom(current);
+		
+		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      current state: " + current
+				+ "\n      fallState: " + fallState + "\n      branchState: " + branchState);
 		
 		s.apply(new StmtAnalyzer(current, fallState, branchState));
 		

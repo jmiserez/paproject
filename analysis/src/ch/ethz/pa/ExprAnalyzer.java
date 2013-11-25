@@ -171,7 +171,10 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		}
 		@Override
 		public void caseIntConstant(IntConstant a) {
-			result = new IntervalPerVar(); // BOT
+			if (!new Interval(a.value).meet(r).equals(Interval.BOT))
+				result = m;
+			else
+				result = new IntervalPerVar(); // BOT
 		}
 		
 		@Override
@@ -180,7 +183,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 			String varName = a.getName();
 			Interval ma = m.getIntervalForVar(varName);
 			Interval b = r.meet(ma);
-			m.putIntervalForVar(varName, b);
+			result.putIntervalForVar(varName, b);
 		}
 	}
 	

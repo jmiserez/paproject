@@ -34,6 +34,9 @@ public class Interval {
 	
 	@Override
 	public String toString() {
+		if (this.equals(BOT)) {
+			return "[BOT]";
+		}
 		return String.format("[%d,%d]", lower, upper);
 	}
 	
@@ -145,15 +148,20 @@ public class Interval {
 			this.i2 = i2;
 		}
 		
+		/*
+		 * fallOut = inverse of OP
+		 * branchOut = OP
+		 */
+		
 		@Override
 		public void caseEqExpr(EqExpr v) {
-			fallOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
-			branchOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+			branchOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
+			fallOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
 		}
 		@Override
 		public void caseNeExpr(NeExpr v) {
-			fallOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
-			branchOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
+			branchOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+			fallOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
 		}
 		@Override
 		public void caseGeExpr(GeExpr v) {

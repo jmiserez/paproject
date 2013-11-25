@@ -56,6 +56,8 @@ public class IntervalTest {
 		assertEquals(new Interval(1, 1), new Interval(-1, 1).meet(new Interval(1, 1)));
 		assertEquals(new Interval(-1, -1), new Interval(-1, -1).meet(new Interval(-2, 1)));
 		assertEquals(new Interval(-2, 3), new Interval(-5, 5).meet(new Interval(-2, 3)));
+		assertEquals(new Interval(-6, 6), new Interval(-6, 6).meet(Interval.TOP));
+		assertEquals(Interval.TOP, new Interval(-6, 6).join(Interval.TOP));
 		assertEquals(new Interval(1, 1), new Interval(1, 1).meet(Interval.TOP));
 		assertEquals(Interval.BOT, new Interval(1, 1).meet(new Interval(2, 2)));
 		assertEquals(Interval.BOT, new Interval(1, 1).meet(Interval.BOT));
