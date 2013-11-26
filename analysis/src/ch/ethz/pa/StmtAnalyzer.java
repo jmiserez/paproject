@@ -75,4 +75,9 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		}
 	}
 
+	@Override
+	public void defaultCase(Object obj) {
+		//TODO: Set everything to TOP
+	}
+
 }
