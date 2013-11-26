@@ -65,22 +65,14 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		// You need to check the parameters here.
 		InvokeExpr expr = stmt.getInvokeExpr();
 		if (expr.getMethod().getName().equals("adjustValue")) {
-			// TODO: Check that this is really the method from the AircraftControl class.
-
-			// TODO: Check that the values are in the allowed range (we do this while computing fixpoint).
-			//System.out.println(expr.getArg(0) + " " + expr.getArg(1));
+			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
+			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
+			ea.handleAdjustValue(expr, fallState); //TODO: is fallState correct??
 		} else if(expr.getMethod().getName().equals("readSensor")){
-			// TODO: Check that this is really the method from the AircraftControl class.
-			checkReadSensorArgument(expr);
+			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
+			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
+			ea.handleReadSensor(expr, fallState); //TODO: is fallState correct??
 		}
 	}
 
-	protected void checkReadSensorArgument(InvokeExpr readSensor) {
-		Value v = ((InvokeExpr) readSensor).getArg(0);
-		Interval i = new Interval();
-		ea.valueToInterval(i, v);
-		if (!(new Interval(0, 15).contains(i))){
-			throw new ProgramIsUnsafeException("readSensor argument was out of range ("+i.toString()+")");
-		}
-	}
 }

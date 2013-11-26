@@ -2,13 +2,16 @@ package ch.ethz.pa;
 import java.util.HashMap;
 import java.util.Map;
 
-import soot.jimple.BinopExpr;
-import soot.jimple.IntConstant;
-import soot.jimple.internal.JimpleLocal;
-
 public class IntervalPerVar {
+	
+	private HashMap<String, Interval> values;
+	private HashMap<String, HashMap<Integer, Integer>> adjustValueCount; //TODO: add this to the other methods
+	private HashMap<String, HashMap<Integer, Integer>> readSensorCount; //TODO: add this to the other methods
+	
 	public IntervalPerVar() {
 		values = new HashMap<String, Interval>();
+		adjustValueCount = new HashMap<String, HashMap<Integer, Integer>>();
+		readSensorCount = new HashMap<String, HashMap<Integer, Integer>>();
 	}
 	
 	@Override
@@ -64,12 +67,44 @@ public class IntervalPerVar {
 	}
 	
 	
+	//TODO: rewrite this in a better way
+	void putReadSensorCountForVar(String var, int sensorId, int count){
+		if(!readSensorCount.containsKey(var)){
+			readSensorCount.put(var, new HashMap<Integer, Integer>());
+		}
+		readSensorCount.get(var).put(sensorId, count);
+	}
+	
+	//TODO: rewrite this in a better way
+	int getReadSensorCountForVar(String var, int sensorId){
+		if(!readSensorCount.containsKey(var) || readSensorCount.get(var).get(sensorId) == null){
+			return 0;
+		} else {
+			return readSensorCount.get(var).get(sensorId);
+		}
+	}
+	
+	//TODO: rewrite this in a better way
+	void putAdjustValueCountForVar(String var, int sensorId, int count){
+		if(!adjustValueCount.containsKey(var)){
+			adjustValueCount.put(var, new HashMap<Integer, Integer>());
+		}
+		adjustValueCount.get(var).put(sensorId, count);
+	}
+	
+	//TODO: rewrite this in a better way
+	int getAdjustValueCountForVar(String var, int sensorId){
+		if(!adjustValueCount.containsKey(var) || adjustValueCount.get(var).get(sensorId) == null){
+			return 0;
+		} else {
+			return adjustValueCount.get(var).get(sensorId);
+		}
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof IntervalPerVar)) return false;
 		return ((IntervalPerVar)o).values.equals(values);
 	}
-	
-	private HashMap<String, Interval> values;
 
 }
