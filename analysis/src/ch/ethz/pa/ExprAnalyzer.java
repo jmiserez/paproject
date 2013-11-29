@@ -17,17 +17,19 @@ import soot.jimple.NeExpr;
 import soot.jimple.SubExpr;
 import soot.jimple.VirtualInvokeExpr;
 import soot.toolkits.scalar.Pair;
-import ch.ethz.pa.Interval.PairSwitch;
+import ch.ethz.pa.domain.AbstractDomain;
+import ch.ethz.pa.domain.AbstractDomain.PairSwitch;
+import ch.ethz.pa.domain.Domain;
 
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	StmtAnalyzer sa;
-	Interval result;
+	AbstractDomain result;
 	
-	private final static Interval[] SENSOR_ID_INTERVALS;
+	private final static AbstractDomain[] SENSOR_ID_INTERVALS;
 	static {
-		SENSOR_ID_INTERVALS = new Interval[16];
+		SENSOR_ID_INTERVALS = new Domain[16];
         for (int i = 0; i <= 15; i++){
-        	SENSOR_ID_INTERVALS[i] = new Interval(i);
+        	SENSOR_ID_INTERVALS[i] = new Domain(i);
         }
     }
 	
@@ -41,27 +43,27 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	/*
 	 * Getter for the result value of the .apply(ea)
 	 */
-	public Interval getResult() {
+	public AbstractDomain getResult() {
 		return result;
 	}
 	
     /*
      * Called for any type of value
      */
-    public void valueToInterval(Interval ival, Value val) {
-        Interval temp = result;
-        result = ival;
+    public void valueToInterval(AbstractDomain rvar, Value val) {
+    	AbstractDomain temp = result;
+        result = rvar;
         val.apply(this);
-        ival.copyFrom(result);
+        rvar.copyFrom(result);
         result = temp;
     }
     
     /*
      * Called for any type of value
      */
-    public Interval valueToInterval(Value val) {
-        Interval temp = result;
-        Interval ret = result = new Interval();
+    public AbstractDomain valueToInterval(Value val) {
+    	AbstractDomain temp = result;
+    	AbstractDomain ret = result = new Domain();
         val.apply(this);
         result = temp;
         return ret;
@@ -71,15 +73,15 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
      * Called for any type of value
      */
     public void binExprToState(IntervalPerVar ipv, Value val) {
-        Interval temp = result;
-        result = new Interval();
+    	AbstractDomain temp = result;
+        result = new Domain();
         val.apply(this);
         result = temp;
     }
     
 	@Override
 	public void caseIntConstant(IntConstant v) {
-		result.copyFrom(new Interval(v.value));
+		result.copyFrom(new Domain(v.value));
 	}
 
 	@Override
@@ -92,7 +94,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	@Override
 	public void defaultCase(Object v) {
-		result = Interval.TOP;
+		result = new Domain().getTop();
 	}
 
 	@Override
@@ -156,11 +158,11 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	private void doCondExpr(ConditionExpr c) {
 		Value a1 = c.getOp1(),
 			  a2 = c.getOp2();
-		PairSwitch ps = new Interval.PairSwitch(valueToInterval(a1), valueToInterval(a2));
+		PairSwitch ps = new Domain.PairSwitch(valueToInterval(a1), valueToInterval(a2));
 		c.apply(ps);
 		
-		Pair<Interval, Interval> p = ps.fallOut;
-		Interval r1 = p.getO1(),
+		Pair<AbstractDomain, AbstractDomain> p = ps.fallOut;
+		AbstractDomain r1 = p.getO1(),
 				 r2 = p.getO2();
 		IntervalPerVar s1 = select(a1, r1, sa.currentState);
 		IntervalPerVar s2 = select(a2, r2, sa.currentState);
@@ -179,16 +181,16 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	private static class SelectSwitch extends AbstractJimpleValueSwitch {
 		IntervalPerVar result;
-		private Interval r;
+		private AbstractDomain r;
 		private IntervalPerVar m;
 		
-		SelectSwitch(Interval r, IntervalPerVar m) {
+		SelectSwitch(AbstractDomain r, IntervalPerVar m) {
 			this.r = r;
 			this.m = m;
 		}
 		@Override
 		public void caseIntConstant(IntConstant a) {
-			if (!new Interval(a.value).meet(r).equals(Interval.BOT))
+			if (!new Domain(a.value).meet(r).isBot())
 				result = m;
 			else
 				result = new IntervalPerVar(); // BOT
@@ -198,8 +200,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		public void caseLocal(Local a) {
 			result = m.copy();
 			String varName = a.getName();
-			Interval ma = m.getIntervalForVar(varName);
-			Interval b = r.meet(ma);
+			AbstractDomain ma = m.getIntervalForVar(varName);
+			AbstractDomain b = r.meet(ma);
+			//TODO: Remove cast
 			result.putIntervalForVar(varName, b);
 		}
 	}
@@ -207,7 +210,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	/*
 	 * Switch function from lecture notes.
 	 */
-	public static IntervalPerVar select(Value a, Interval r, IntervalPerVar m) {
+	public static IntervalPerVar select(Value a, AbstractDomain r, IntervalPerVar m) {
 		SelectSwitch s = new SelectSwitch(r, m);
 		a.apply(s);
 		return s.result;
@@ -216,14 +219,14 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	protected void handleAdjustValue(InvokeExpr adjustValue, IntervalPerVar m) {
 		Value sensorIdArg = ((InvokeExpr) adjustValue).getArg(0);
 		Value newValueArg = ((InvokeExpr) adjustValue).getArg(1);
-		Interval sensorIdInterval = new Interval();
-		Interval newValueInterval = new Interval();
+		AbstractDomain sensorIdInterval = new Domain();
+		AbstractDomain newValueInterval = new Domain();
 		this.valueToInterval(sensorIdInterval, sensorIdArg);
 		this.valueToInterval(newValueInterval, newValueArg);
-		if (!(new Interval(0, 15).contains(sensorIdInterval))){
+		if (!(new Domain(0, 15).contains(sensorIdInterval))){
 			throw new ProgramIsUnsafeException("adjustValue sensorId argument was out of range ("+sensorIdInterval.toString()+")");
 		}
-		if (!(new Interval(-999, 999).contains(newValueInterval))){
+		if (!(new Domain(-999, 999).contains(newValueInterval))){
 			throw new ProgramIsUnsafeException("adjustValue newValue argument was out of range ("+newValueInterval.toString()+")");
 		}
 		for (int i = 0; i <= 15; i++){
@@ -240,9 +243,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	
 	protected void handleReadSensor(InvokeExpr readSensor, IntervalPerVar m) {
 		Value sensorIdArg = ((InvokeExpr) readSensor).getArg(0);
-		Interval sensorIdInterval = new Interval();
+		AbstractDomain sensorIdInterval = new Domain();
 		this.valueToInterval(sensorIdInterval, sensorIdArg);
-		if (!(new Interval(0, 15).contains(sensorIdInterval))){
+		if (!(new Domain(0, 15).contains(sensorIdInterval))){
 			throw new ProgramIsUnsafeException("readSensor sensorId argument was out of range ("+sensorIdInterval.toString()+")");
 		}
 		for (int i = 0; i <= 15; i++){

@@ -2,14 +2,17 @@ package ch.ethz.pa;
 import java.util.HashMap;
 import java.util.Map;
 
+import ch.ethz.pa.domain.AbstractDomain;
+import ch.ethz.pa.domain.Domain;
+
 public class IntervalPerVar {
 	
-	private HashMap<String, Interval> values;
+	private HashMap<String, AbstractDomain> values;
 	private HashMap<String, HashMap<Integer, Integer>> adjustValueCount; //TODO: add this to the other methods
 	private HashMap<String, HashMap<Integer, Integer>> readSensorCount; //TODO: add this to the other methods
 	
 	public IntervalPerVar() {
-		values = new HashMap<String, Interval>();
+		values = new HashMap<String, AbstractDomain>();
 		adjustValueCount = new HashMap<String, HashMap<Integer, Integer>>();
 		readSensorCount = new HashMap<String, HashMap<Integer, Integer>>();
 	}
@@ -17,7 +20,7 @@ public class IntervalPerVar {
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder();
-		for (Map.Entry<String, Interval> entry : values.entrySet()) {
+		for (Map.Entry<String, AbstractDomain> entry : values.entrySet()) {
 			if (b.length() != 0) b.append(", ");
 			b.append(entry.getKey());
 			b.append("=");
@@ -29,8 +32,8 @@ public class IntervalPerVar {
 	// This does deep copy of values as opposed to shallow copy, but feel free to optimize.
 	public void copyFrom(IntervalPerVar other) {
 		values.clear();
-		for (Map.Entry<String, Interval> entry : other.values.entrySet()) {
-			Interval n = new Interval();
+		for (Map.Entry<String, AbstractDomain> entry : other.values.entrySet()) {
+			AbstractDomain n = new Domain();
 			n.copyFrom(entry.getValue());
 			values.put(entry.getKey(), n);
 		}
@@ -43,25 +46,25 @@ public class IntervalPerVar {
 	}
 	
 	public static void join(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
-		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
+		for (Map.Entry<String, AbstractDomain> entry : src1.values.entrySet()) {
 			trg.putIntervalForVar(entry.getKey(), entry.getValue().join(src2.getIntervalForVar(entry.getKey())).copy());
 		}
 	}
 	
 	public static void meet(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
-		for (Map.Entry<String, Interval> entry : src1.values.entrySet()) {
+		for (Map.Entry<String, AbstractDomain> entry : src1.values.entrySet()) {
 			trg.putIntervalForVar(entry.getKey(), entry.getValue().meet(src2.getIntervalForVar(entry.getKey())).copy());
 		}
 	}
 	
-	void putIntervalForVar(String var, Interval interval) {
+	void putIntervalForVar(String var, AbstractDomain interval) {
 		values.put(var, interval);
 	}
 	
-	Interval getIntervalForVar(String var) {
-		Interval i = values.get(var);
+	AbstractDomain getIntervalForVar(String var) {
+		AbstractDomain i = values.get(var);
 		if (i == null)
-			return Interval.BOT.copy();
+			return new Domain().getBot();
 		else
 			return i;
 	}
