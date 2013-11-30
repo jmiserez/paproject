@@ -4,6 +4,7 @@ import java.util.Map;
 
 import ch.ethz.pa.domain.AbstractDomain;
 import ch.ethz.pa.domain.Domain;
+import ch.ethz.pa.util.PaUtils;
 
 public class IntervalPerVar {
 	
@@ -20,14 +21,16 @@ public class IntervalPerVar {
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder();
-		for (Map.Entry<String, AbstractDomain> entry : values.entrySet()) {
-			if (b.length() != 0) b.append(", ");
-			b.append(entry.getKey());
-			b.append("=");
-			b.append(entry.getValue().toString());
-		}		
+		String delim = ", ";
+		b.append("values = [");
+		b.append(PaUtils.join(values.entrySet(), delim));
+		b.append("], adjustValueCount = [");
+		b.append(PaUtils.joinRecursive(adjustValueCount.entrySet(), delim, "[", "]"));
+		b.append("], readSensorCount = [");
+		b.append(PaUtils.joinRecursive(readSensorCount.entrySet(), delim, "[", "]"));
+		b.append("]");
 		return b.toString();
-	}	
+	}
 	
 	// This does deep copy of values as opposed to shallow copy, but feel free to optimize.
 	public void copyFrom(IntervalPerVar other) {

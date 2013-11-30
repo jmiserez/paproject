@@ -148,7 +148,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
 			handleReadSensor(expr, sa.fallState);
-			//TODO return Interval 0-15
+			result.copyFrom(new Domain(0, 15));
 		}
 	}
 

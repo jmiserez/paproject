@@ -1,8 +1,8 @@
 package ch.ethz.pa;
 
-import ch.ethz.pa.domain.AbstractDomain;
-import ch.ethz.pa.domain.Domain;
 import soot.Local;
+import soot.RefType;
+import soot.Type;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
@@ -12,6 +12,8 @@ import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.internal.JimpleLocal;
+import ch.ethz.pa.domain.AbstractDomain;
+import ch.ethz.pa.domain.Domain;
 
 public class StmtAnalyzer extends AbstractStmtSwitch {
 
@@ -45,11 +47,17 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	private void handleAssign(DefinitionStmt stmt) {
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
-		System.out.println(lval.getClass().getName() + " " + rval.getClass().getName());
+		System.out.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
 		AbstractDomain rvar = new Domain();
 		if (lval instanceof JimpleLocal) {
-			String varName = ((JimpleLocal)lval).getName();
-			fallState.putIntervalForVar(varName, rvar);
+			JimpleLocal llocal = ((JimpleLocal)lval);
+			String varName = llocal.getName();
+			Type varType = llocal.getType();
+			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
+				// TODO: putPointerSetForVar(varName, rvar);
+			} else {
+				fallState.putIntervalForVar(varName, rvar);
+			}
 		}
 		ea.valueToInterval(rvar, rval);
 	}
@@ -57,7 +65,6 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	public AbstractDomain getLocalVariable(Local v) {
 		return currentState.getIntervalForVar(((Local)v).getName());
 	}
-
 
 	@Override
 	public void caseInvokeStmt(InvokeStmt stmt) {
@@ -70,6 +77,8 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
 			ea.handleAdjustValue(expr, fallState);
 		} else if(expr.getMethod().getName().equals("readSensor")){
+			// Note: this is just a statement (without an assignment!), therefore we do need to change any intervals
+			
 			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
 			ea.handleReadSensor(expr, fallState);
