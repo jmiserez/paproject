@@ -67,11 +67,11 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		if (expr.getMethod().getName().equals("adjustValue")) {
 			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
-			ea.handleAdjustValue(expr, fallState); //TODO: is fallState correct??
+			ea.handleAdjustValue(expr, fallState);
 		} else if(expr.getMethod().getName().equals("readSensor")){
 			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
-			ea.handleReadSensor(expr, fallState); //TODO: is fallState correct??
+			ea.handleReadSensor(expr, fallState);
 		}
 	}
 
