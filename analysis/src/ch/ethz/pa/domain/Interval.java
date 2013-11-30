@@ -1,20 +1,16 @@
-package ch.ethz.pa;
+package ch.ethz.pa.domain;
 
-import soot.jimple.AbstractJimpleValueSwitch;
-import soot.jimple.EqExpr;
-import soot.jimple.GeExpr;
-import soot.jimple.GtExpr;
-import soot.jimple.LeExpr;
-import soot.jimple.LtExpr;
-import soot.jimple.NeExpr;
+import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
-
-public class Interval {
+/* This is default on purpose, use Domain for creating objects
+ * or AbstractDomain as type for variables.
+ */
+class Interval extends AbstractDomain {
 	// TODO: Do you need to handle infinity or empty interval?
-	public final static int INF = 10;
-	public final static Interval TOP = new Interval(-INF, INF);
-	public final static Interval BOT = new Interval();
+	private final static int INF = 10;
+	private final static Interval TOP = new Interval(-INF, INF);
+	private final static Interval BOT = new Interval();
 	
 	protected int lower, upper;
 	protected boolean bot = false;
@@ -39,25 +35,21 @@ public class Interval {
 		}
 		return String.format("[%d,%d]", lower, upper);
 	}
-	
-	public void copyFrom(Interval other) {
+
+	@Override
+	public void copyFrom(AbstractDomain other) {
 		Interval i = (Interval) other;
 		lower = i.lower;
 		upper = i.upper;
 		bot = i.bot;
 	}
 
-	private static Interval handleOverflow(Interval i) {
+	private static AbstractDomain handleOverflow(Interval i) {
 		// TODO: Be more precise
 		if (i.lower < -INF || i.upper > INF)
 			return TOP.copy();
 		else
 			return i;
-	}
-	
-	private void set(int min, int max) {
-		this.lower = min;
-		this.upper = max;
 	}
 
 	@Override
@@ -71,25 +63,21 @@ public class Interval {
 		return lower == i.lower && upper == i.upper;
 	}
 	
-	private boolean isBot() {
-		return lower > upper;
-	}
-
-	public Interval plus(Interval a) {
+	public AbstractDomain plus(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
-		// TODO: Handle overflow. 
+		// TODO: Handle overflow.
 		return handleOverflow(new Interval(this.lower + i.lower, this.upper + i.upper));
 	}
 
-	public Interval minus(Interval a) {
+	public AbstractDomain minus(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow. 
 		return handleOverflow(new Interval(this.lower - i.lower, this.upper - i.upper));
 	}
 
-	public Interval multiply(Interval a) {
+	public AbstractDomain multiply(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow.
@@ -103,8 +91,9 @@ public class Interval {
 			newUpper *= -1;
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
-
-	public Interval join(Interval a) {
+	
+	@Override
+	public AbstractDomain join(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		if (this.equals(BOT))
@@ -113,8 +102,9 @@ public class Interval {
 			return this.copy();
 		return handleOverflow(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
 	}
-
-	public Interval meet(Interval a) {
+	
+	@Override
+	public AbstractDomain meet(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		if (this.equals(BOT))
@@ -126,62 +116,75 @@ public class Interval {
 		return new Interval(Math.max(this.lower, i.lower), Math.min(this.upper, i.upper));
 	}
 
-	public Interval copy() {
+	@Override
+	public AbstractDomain copy() {
 		Interval i = new Interval();
 		i.copyFrom(this);
 		return i;
 	}
-
-	public boolean contains(Interval other) {
-        return this.equals(join(other));
-	}
 	
-	protected static class PairSwitch extends AbstractJimpleValueSwitch {
-		Pair<Interval, Interval> fallOut, branchOut;
+	public static class PairSwitch extends AbstractDomain.PairSwitch {
 		Interval i1, i2;
 
+		private final static AbstractDomain pInf = new Interval(-INF, -INF); // +Infinity
+		private final static AbstractDomain mInf = new Interval(INF, INF); // -Infinity
+		
 		/* 
-		 *  For each case store fall-out pair in fallOut and branch-out pair in branchOut
+		 *  Implement the different pairs below
 		 */
-		PairSwitch(Interval i1, Interval i2) {
-			this.i1 = i1;
-			this.i2 = i2;
+		public PairSwitch(AbstractDomain i1, AbstractDomain i2) {
+			this.i1 = (Interval) i1;
+			this.i2 = (Interval) i2;
 		}
 		
-		/*
-		 * fallOut = inverse of OP
-		 * branchOut = OP
-		 */
+		Pair<AbstractDomain, AbstractDomain> doEqExpr(ConditionExpr v) {
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2), i1.meet(i2));
+		}
 		
-		@Override
-		public void caseEqExpr(EqExpr v) {
-			branchOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
-			fallOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
+		Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v) {
+			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2), i1.join(i2));
 		}
-		@Override
-		public void caseNeExpr(NeExpr v) {
-			branchOut = new Pair<Interval, Interval>(i1.join(i2), i1.join(i2));
-			fallOut = new Pair<Interval, Interval>(i1.meet(i2), i1.meet(i2));
+		
+		Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v) {
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
 		}
+
 		@Override
-		public void caseGeExpr(GeExpr v) {
+		Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v) {
 			// TODO Auto-generated method stub
-			super.caseGeExpr(v);
+			return null;
 		}
+
 		@Override
-		public void caseGtExpr(GtExpr v) {
+		Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v) {
 			// TODO Auto-generated method stub
-			super.caseGtExpr(v);
+			return null;
 		}
+
 		@Override
-		public void caseLeExpr(LeExpr v) {
+		Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v) {
 			// TODO Auto-generated method stub
-			super.caseLeExpr(v);
+			return null;
 		}
-		@Override
-		public void caseLtExpr(LtExpr v) {
-			// TODO Auto-generated method stub
-			super.caseLtExpr(v);
-		}
+	}
+
+	@Override
+	public AbstractDomain getTop() {
+		return Interval.TOP.copy();
+	}
+
+	@Override
+	public AbstractDomain getBot() {
+		return Interval.BOT.copy();
+	}
+
+	@Override
+	public boolean isTop() {
+		return lower == Interval.TOP.lower && upper == Interval.TOP.upper;
+	}
+
+	@Override
+	public boolean isBot() {
+		return lower == Interval.BOT.lower && upper == Interval.BOT.upper;
 	}
 }

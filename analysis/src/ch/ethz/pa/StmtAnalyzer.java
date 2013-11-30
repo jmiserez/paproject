@@ -1,5 +1,7 @@
 package ch.ethz.pa;
 
+import ch.ethz.pa.domain.AbstractDomain;
+import ch.ethz.pa.domain.Domain;
 import soot.Local;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
@@ -7,7 +9,6 @@ import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
-import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.internal.JimpleLocal;
@@ -45,7 +46,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
 		System.out.println(lval.getClass().getName() + " " + rval.getClass().getName());
-		Interval rvar = new Interval();
+		AbstractDomain rvar = new Domain();
 		if (lval instanceof JimpleLocal) {
 			String varName = ((JimpleLocal)lval).getName();
 			fallState.putIntervalForVar(varName, rvar);
@@ -53,7 +54,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		ea.valueToInterval(rvar, rval);
 	}
 
-	public Interval getLocalVariable(Local v) {
+	public AbstractDomain getLocalVariable(Local v) {
 		return currentState.getIntervalForVar(((Local)v).getName());
 	}
 
@@ -73,6 +74,11 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
 			ea.handleReadSensor(expr, fallState);
 		}
+	}
+
+	@Override
+	public void defaultCase(Object obj) {
+		//TODO: Set everything to TOP
 	}
 
 }

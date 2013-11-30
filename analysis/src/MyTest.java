@@ -1,5 +1,3 @@
-import java.util.Random;
-
 
 /**
  * And example application you may want to analyze to test your analysis.

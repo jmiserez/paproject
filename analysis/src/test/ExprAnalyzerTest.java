@@ -7,8 +7,7 @@ import org.junit.Test;
 import soot.jimple.IntConstant;
 import soot.jimple.internal.JAddExpr;
 import ch.ethz.pa.ExprAnalyzer;
-import ch.ethz.pa.Interval;
-import ch.ethz.pa.StmtAnalyzer;
+import ch.ethz.pa.domain.Domain;
 
 public class ExprAnalyzerTest {
 	
@@ -54,7 +53,7 @@ public class ExprAnalyzerTest {
 	public void testCaseAddExprAddExpr() {
 		ExprAnalyzer ea = new ExprAnalyzer(null);
 		new JAddExpr(IntConstant.v(1), IntConstant.v(1)).apply(ea);
-		assertEquals(new Interval(2), ea.getResult());
+		assertEquals(new Domain(2), ea.getResult());
 	}
 
 	@Test
