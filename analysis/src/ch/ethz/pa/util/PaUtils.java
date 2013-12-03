@@ -1,9 +1,11 @@
 package ch.ethz.pa.util;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class PaUtils {
-	public static <T> String join(Iterable<T> s, String delimiter) {
+	public static <T> String prettyPrintIterable(Iterable<T> s, String delimiter) {
 	    Iterator<T> iter = s.iterator();
 	    if (!iter.hasNext()) return "";
 	    StringBuilder buffer = new StringBuilder(iter.next().toString());
@@ -11,7 +13,7 @@ public class PaUtils {
 	    return buffer.toString();
 	}
 	
-	public static <T> String joinRecursive(Iterable<T> s, String delimiter, String nestBegin, String nestEnd) {
+	public static <T> String prettyPrintIterableRecursive(Iterable<T> s, String delimiter, String nestBegin, String nestEnd) {
 	    if(s instanceof Object){
 			Iterator<T> iter = s.iterator();
 		    if (!iter.hasNext()) return "";
@@ -20,19 +22,19 @@ public class PaUtils {
 		    boolean first = true;
 		    while (iter.hasNext()){
 			    next = iter.next();
-			    if(next instanceof Iterable<?> && !(next instanceof String)){
+			    if(next instanceof Iterable<?>){
 			    	//print nested
 			    	Iterator<?> nestedIterator = ((Iterable<?>)next).iterator();
 			    	if(nestedIterator.hasNext()){
 				    	buffer.append(nestBegin);
-				    	buffer.append(joinRecursive((Iterable<?>)next, delimiter, nestBegin, nestEnd));
+				    	buffer.append(prettyPrintIterableRecursive((Iterable<?>)next, delimiter, nestBegin, nestEnd));
 				    	buffer.append(nestEnd);
 			    	}
 			    } else {
 			    	if(!first){
 			    		buffer.append(delimiter);
 			    	}
-			    	buffer.append(iter.next().toString());
+			    	buffer.append(next.toString());
 			    }
 			    first = false;
 		    }
@@ -41,6 +43,55 @@ public class PaUtils {
 	    } else {
 	    	return "";
 	    }
+	}
+	
+	/**
+	 * Can copy any (nested) Map which has a default constructor
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K,V, M extends Map<K,V>> M deepCopyMap(M source){
+		M result = null;
+		try {
+			result = (M) source.getClass().newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+		for(Map.Entry<K, V> entry : source.entrySet()){
+			K k = entry.getKey();
+			V v = entry.getValue();
+			if(k instanceof Map<?,?>){
+				k = (K) deepCopyMap((Map<?,?>) k);
+			}
+			if(v instanceof Map<?,?>){
+				v = (V) deepCopyMap((Map<?,?>) v);
+			}
+			result.put(k, v);
+		}
+		return result;
+	}
+	
+	/**
+	 * Can copy any (nested) Set which has a default constructor
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E, S extends Set<E>> S deepCopySet(S source){
+		S result = null;
+		try {
+			result = (S) source.getClass().newInstance();
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+		for(E e : source){
+			if(e instanceof Set<?>){
+				e = (E) deepCopySet((Set<?>) e);
+			}
+			result.add(e);
+		}
+		return result;
 	}
 	
 }

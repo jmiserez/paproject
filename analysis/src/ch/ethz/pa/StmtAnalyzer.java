@@ -55,6 +55,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 			Type varType = llocal.getType();
 			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
 				// TODO: putPointerSetForVar(varName, rvar);
+				// TODO: assert we have the aliases 
 			} else {
 				fallState.putIntervalForVar(varName, rvar);
 			}

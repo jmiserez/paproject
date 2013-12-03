@@ -14,11 +14,16 @@ public class Verifier {
 		String analyzedClass = args[0];
 		SootClass c = loadClass(analyzedClass);
 		
+		soot.options.Options.v().set_keep_line_number(true);
+		
 		boolean safe = true;
 
 	/* Use the following to iterate over the class methods. */
 		try{
 			for (SootMethod method : c.getMethods()) {
+				PointsToAnalysis pointerAnalysis = new PointsToAnalysis(new BriefUnitGraph(method.retrieveActiveBody()));
+				ObjectSetPerVar aliases = pointerAnalysis.run();
+				System.out.println("Aliases: " + aliases);
 				Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()));
 				analysis.run();
 				// ....
