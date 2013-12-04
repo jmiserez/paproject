@@ -128,6 +128,7 @@ class Interval extends AbstractDomain {
 
 		private final static AbstractDomain pInf = new Interval(-INF, -INF); // +Infinity
 		private final static AbstractDomain mInf = new Interval(INF, INF); // -Infinity
+		private final static AbstractDomain one = new Interval(1, 1); // 1
 		
 		/* 
 		 *  Implement the different pairs below
@@ -146,25 +147,26 @@ class Interval extends AbstractDomain {
 		}
 		
 		Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v) {
+			// TODO: Create testcase
 			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			// TODO: Create testcase
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(pInf)), i1.join(mInf).meet(i2));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			// TODO: Create testcase
+			return new Pair<AbstractDomain, AbstractDomain>(i2.join(i1.minus(one)), i1.meet(i2.plus(one)));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			// TODO: Create testcase
+			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2.minus(one)), i2.meet(i1.plus(one)));
 		}
 	}
 
