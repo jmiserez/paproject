@@ -18,6 +18,8 @@ import soot.tagkit.Tag;
 
 public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 	
+	public static int globalLineNumber = 0;
+	
 	protected ObjectSetPerVar in;
 	protected ObjectSetPerVar out;
 	
@@ -37,7 +39,7 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 	}
 
 	private void handleAssign(DefinitionStmt stmt) {
-		LineNumberTag lnt = (LineNumberTag) stmt.getTag("LineNumberTag");
+		LineNumberTag lnt = (LineNumberTag) stmt.getTag("PaLineNumber");
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
 		System.out.println("Line " + lnt.getLineNumber() + ": " + lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());

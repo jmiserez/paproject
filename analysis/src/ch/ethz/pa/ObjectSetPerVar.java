@@ -23,7 +23,6 @@ public class ObjectSetPerVar{
 	
 	public void copyFrom(ObjectSetPerVar other) {
 		objects.clear();
-		objects = new HashMap<String, HashSet<Tag>>();
 		for (Map.Entry<String, HashSet<Tag>> entry : other.objects.entrySet()) {
 			objects.put(entry.getKey(), new HashSet<Tag>());
 			objects.get(entry.getKey()).addAll(entry.getValue()); //shallow copy of Set
@@ -66,5 +65,12 @@ public class ObjectSetPerVar{
 			objects.put(var, new HashSet<Tag>());
 		}
 		objects.get(var).addAll(set);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof ObjectSetPerVar)) return false;
+		ObjectSetPerVar other = (ObjectSetPerVar) o;
+		return other.objects.equals(objects);
 	}
 }

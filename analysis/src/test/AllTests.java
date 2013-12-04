@@ -43,6 +43,11 @@ public class AllTests {
     public void testPointerTest2() {
     	verify("PointerTest2");
     }
+    
+    @Test
+    public void testLineNumberTest() {
+    	verify("LineNumberTest");
+    }
 
     @Test
     public void testReadValueWithoutAssignment() {
