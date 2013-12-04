@@ -8,7 +8,7 @@ import soot.toolkits.scalar.Pair;
  */
 class Interval extends AbstractDomain {
 	// TODO: Do you need to handle infinity or empty interval?
-	private final static int INF = 10;
+	private final static int INF = 9999;
 	private final static Interval TOP = new Interval(-INF, INF);
 	private final static Interval BOT = new Interval();
 	
