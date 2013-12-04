@@ -40,8 +40,8 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		IntervalPerVar branchState = new IntervalPerVar();
 		branchState.copyFrom(current);
 		
-		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      current state: " + current
-				+ "\n      fallState: " + fallState + "\n      branchState: " + branchState);
+		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
+		
 		
 		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
 		
@@ -56,6 +56,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 				fnext.copyFrom(branchState);
 			}
 		}		
+		
+		System.out.println(
+				 "      fallState: " + fallState + "\n      branchState: " + branchState);
 	}
 
 	@Override

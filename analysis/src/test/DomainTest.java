@@ -2,15 +2,37 @@ package test;
 
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import ch.ethz.pa.ExprAnalyzer;
 import ch.ethz.pa.domain.Domain;
+import ch.ethz.pa.domain.AbstractDomain;
+import soot.Type;
+import soot.UnitPrinter;
+import soot.Value;
+import soot.ValueBox;
+import soot.jimple.ConditionExpr;
+import soot.jimple.IntConstant;
+import soot.jimple.internal.*;
+import soot.toolkits.scalar.Pair;
+import soot.util.Switch;
 
 public class DomainTest {
+	
+	ExprAnalyzer ea;
+	static Value dummyVal;
+	
 	@Before
 	public void setUp() throws Exception {
+		ea = new ExprAnalyzer(null);
+		dummyVal = IntConstant.v(0);
 	}
 
 	@After
@@ -62,6 +84,74 @@ public class DomainTest {
 		assertEquals(new Domain().getBot(), new Domain(1, 1).meet(new Domain(2, 2)));
 		assertEquals(new Domain().getBot(), new Domain(1, 1).meet(new Domain().getBot()));
 		assertEquals(new Domain().getBot(), new Domain().getBot().meet(new Domain().getBot()));
+	}
+	
+	private static Pair<AbstractDomain, AbstractDomain> testPairEq(ConditionExpr expr, AbstractDomain a1, AbstractDomain a2) {
+		Domain.PairSwitch ps = new Domain.PairSwitch(a1, a2);
+		expr.apply(ps);
+		return ps.branchOut;
+	}
+	
+	private static Pair<AbstractDomain, AbstractDomain> getExpected(AbstractDomain a1, AbstractDomain a2) {
+		return new Pair<AbstractDomain, AbstractDomain>(a1, a2);
+	}
+	
+	@Test
+	public void testPair() {
+		JEqExpr expr = new JEqExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(3,4), new Domain(3, 4)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3,7)));
+	}
+	
+	@Test
+	public void testPairNe() {
+		JNeExpr expr = new JNeExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(0, 7), new Domain(0, 7)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3, 7)));
+	}
+	
+	@Test
+	public void testPairLe() {
+		JLeExpr expr = new JLeExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(0, 4), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3, 7)));
+		assertEquals(getExpected(new Domain(0, 4), new Domain(0, 4)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(0, 4)));
+		assertEquals(getExpected(new Domain(0, 7), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 10), new Domain(3, 7)));
+	}
+	
+	@Test
+	public void testPairGe() {
+		JGeExpr expr = new JGeExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(3, 4), new Domain(3, 4)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3, 7)));
+		assertEquals(getExpected(new Domain(0, 4), new Domain(0, 4)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(0, 4)));
+		assertEquals(getExpected(new Domain(3, 10), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 10), new Domain(3, 7)));
+	}
+	
+	@Test
+	public void testPairGt() {
+		JGtExpr expr = new JGtExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(4, 4), new Domain(3, 3)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3, 7)));
+		assertEquals(getExpected(new Domain(1, 4), new Domain(0, 3)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(0, 4)));
+		assertEquals(getExpected(new Domain(4, 10), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 10), new Domain(3, 7)));
+	}
+	
+	@Test
+	public void testPairLt() {
+		JLtExpr expr = new JLtExpr(dummyVal, dummyVal);
+		assertEquals(getExpected(new Domain(0, 3), new Domain(1, 4)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(0, 4)));
+		assertEquals(getExpected(new Domain(0, 4), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 4), new Domain(3, 7)));
+		assertEquals(getExpected(new Domain(0, 6), new Domain(3, 7)), 
+				testPairEq(expr, new Domain(0, 10), new Domain(3, 7)));
 	}
 
 }

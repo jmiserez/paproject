@@ -58,7 +58,7 @@ class Interval extends AbstractDomain {
 		Interval i = (Interval)o;
 		if (this.isBot() && i.isBot())
 			return true;
-		if (this.isBot() ^ i.isBot())
+		if (this.isBot() || i.isBot())
 			return false;
 		return lower == i.lower && upper == i.upper;
 	}
@@ -128,6 +128,7 @@ class Interval extends AbstractDomain {
 
 		private final static AbstractDomain pInf = new Interval(-INF, -INF); // +Infinity
 		private final static AbstractDomain mInf = new Interval(INF, INF); // -Infinity
+		private final static AbstractDomain one = new Interval(1, 1); // 1
 		
 		/* 
 		 *  Implement the different pairs below
@@ -137,34 +138,38 @@ class Interval extends AbstractDomain {
 			this.i2 = (Interval) i2;
 		}
 		
+		/*
+		 * There is test cases for these in DomainTest
+		 */
+
+		@Override
 		Pair<AbstractDomain, AbstractDomain> doEqExpr(ConditionExpr v) {
 			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2), i1.meet(i2));
 		}
-		
+
+		@Override
 		Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v) {
 			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2), i1.join(i2));
 		}
-		
+
+		@Override
 		Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v) {
-			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(pInf)), i1.join(mInf).meet(i2));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			return new Pair<AbstractDomain, AbstractDomain>(i2.plus(one).join(mInf).meet(i1), i1.minus(one).join(pInf).meet(i2));
 		}
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v) {
-			// TODO Auto-generated method stub
-			return null;
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.minus(one).join(pInf)), i1.plus(one).join(mInf).meet(i2));
 		}
 	}
 
@@ -185,6 +190,6 @@ class Interval extends AbstractDomain {
 
 	@Override
 	public boolean isBot() {
-		return lower == Interval.BOT.lower && upper == Interval.BOT.upper;
+		return lower == Interval.BOT.lower && upper == Interval.BOT.upper && bot == true;
 	}
 }
