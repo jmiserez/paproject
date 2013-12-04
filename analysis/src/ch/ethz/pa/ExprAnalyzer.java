@@ -202,7 +202,6 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 			String varName = a.getName();
 			AbstractDomain ma = m.getIntervalForVar(varName);
 			AbstractDomain b = r.meet(ma);
-			//TODO: Remove cast
 			result.putIntervalForVar(varName, b);
 		}
 	}

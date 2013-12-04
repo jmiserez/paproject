@@ -58,7 +58,7 @@ class Interval extends AbstractDomain {
 		Interval i = (Interval)o;
 		if (this.isBot() && i.isBot())
 			return true;
-		if (this.isBot() ^ i.isBot())
+		if (this.isBot() || i.isBot())
 			return false;
 		return lower == i.lower && upper == i.upper;
 	}
@@ -190,6 +190,6 @@ class Interval extends AbstractDomain {
 
 	@Override
 	public boolean isBot() {
-		return lower == Interval.BOT.lower && upper == Interval.BOT.upper;
+		return lower == Interval.BOT.lower && upper == Interval.BOT.upper && bot == true;
 	}
 }
