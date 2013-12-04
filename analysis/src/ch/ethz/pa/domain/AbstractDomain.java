@@ -34,12 +34,15 @@ public abstract class AbstractDomain {
 		public Pair<AbstractDomain, AbstractDomain> fallOut;
 		public Pair<AbstractDomain, AbstractDomain> branchOut;
 
-		abstract Pair<AbstractDomain, AbstractDomain> doEqExpr(ConditionExpr v);
-		abstract Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v);
-		abstract Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v);
-		abstract Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v);
-		abstract Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v);
-		abstract Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v);
+		/*
+		 * These are public for JUnit reasons. Do NOT call them outside of this package.
+		 */
+		public abstract Pair<AbstractDomain, AbstractDomain> doEqExpr(ConditionExpr v);
+		public abstract Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v);
+		public abstract Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v);
+		public abstract Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v);
+		public abstract Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v);
+		public abstract Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v);
 
 		/*
 		 * fallOut = inverse of OP

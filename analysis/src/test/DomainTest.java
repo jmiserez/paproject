@@ -2,15 +2,34 @@ package test;
 
 import static org.junit.Assert.*;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import ch.ethz.pa.ExprAnalyzer;
 import ch.ethz.pa.domain.Domain;
+import ch.ethz.pa.domain.AbstractDomain;
+import soot.Type;
+import soot.UnitPrinter;
+import soot.Value;
+import soot.ValueBox;
+import soot.jimple.ConditionExpr;
+import soot.jimple.IntConstant;
+import soot.jimple.internal.*;
+import soot.toolkits.scalar.Pair;
+import soot.util.Switch;
 
 public class DomainTest {
+	
+	ExprAnalyzer ea;
+	static Value dummyVal;
+	
 	@Before
 	public void setUp() throws Exception {
+		ea = new ExprAnalyzer(null);
+		dummyVal = IntConstant.v(0);
 	}
 
 	@After
@@ -62,6 +81,55 @@ public class DomainTest {
 		assertEquals(new Domain().getBot(), new Domain(1, 1).meet(new Domain(2, 2)));
 		assertEquals(new Domain().getBot(), new Domain(1, 1).meet(new Domain().getBot()));
 		assertEquals(new Domain().getBot(), new Domain().getBot().meet(new Domain().getBot()));
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T extends AbstractJimpleIntBinopExpr> Pair<AbstractDomain, AbstractDomain> testPairEq(T clazz, AbstractDomain a1, AbstractDomain a2) {
+		Domain.PairSwitch ps = new Domain.PairSwitch(a1, a2);
+		//T le = (T) clazz.getClass().newInstance();
+		//T le = new T(dummyVal, dummyVal);
+		//le.apply(ps);
+		return ps.branchOut;
+	}
+	
+	@Test
+	public void testPairEq() {
+		Pair<AbstractDomain, AbstractDomain> expected = new Pair<AbstractDomain, AbstractDomain>(new Domain(3,4), new Domain(3, 4));
+		//assertEquals(expected, testPairEq(JEqExpr.class, new Domain(3,7), new Domain(0, 4)));
+	}
+	
+	@Test
+	public void testPairNe() {
+		Domain.PairSwitch ps = new Domain.PairSwitch(new Domain(3,7), new Domain(0, 4));
+		Pair<AbstractDomain, AbstractDomain> expected = new Pair<AbstractDomain, AbstractDomain>(new Domain(3,7), new Domain(0, 4));
+		JLeExpr le = new JLeExpr(dummyVal, dummyVal);
+		le.apply(ps);
+		assertEquals(expected, ps.branchOut);
+		
+	}
+	
+	@Test
+	public void testPairLe() {
+		Domain.PairSwitch ps = new Domain.PairSwitch(new Domain(3,7), new Domain(0, 4));
+		Pair<AbstractDomain, AbstractDomain> expected = new Pair<AbstractDomain, AbstractDomain>(new Domain(3,7), new Domain(0, 4));
+		JLeExpr le = new JLeExpr(dummyVal, dummyVal);
+		le.apply(ps);
+		assertEquals(expected, ps.branchOut);
+	}
+	
+	@Test
+	public void testPairGe() {
+		
+	}
+	
+	@Test
+	public void testPairGt() {
+		
+	}
+	
+	@Test
+	public void testPairLt() {
+		
 	}
 
 }
