@@ -11,6 +11,7 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
+import soot.jimple.NullConstant;
 import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.LineNumberTag;
@@ -51,7 +52,7 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
 				out.putObjectSetForVar(varName, rvar);
 				Set<Tag> lptrs = out.getObjectSetForVar(varName);
-				// no need to use ExprAnalyzer here, we only need to handle 2 cases
+				// no need to use ExprAnalyzer here, we only need to handle 3 cases
 				if(rval instanceof JNewExpr){
 					//remember we are doing flow-INsensitive analysis, so we need to take the union
 					lptrs.add(lnt);
@@ -60,8 +61,10 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 					JimpleLocal rlocal = ((JimpleLocal)rval);
 					lptrs.addAll(in.getObjectSetForVar(rlocal.getName()));
 					System.err.println("DEBUG: ADD POINTER: "+varName+" -(var)> "+rlocal.getName()+"-(alias)->"+in.getObjectSetForVar(rlocal.getName()));
+				} else if (rval instanceof NullConstant){
+					// do not add anything
 				} else {
-					//TODO:unsupported, we do not know what object is assigned to this variable. Assume all of them (TOP)
+					//TODO:unsupported, we do not know what object is assigned to this variable. Assume all of them (TOP)?
 					System.err.println("rval not instanceof JNewExpr or JimpleLocal!");
 				}
 			}

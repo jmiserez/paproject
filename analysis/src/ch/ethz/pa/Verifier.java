@@ -30,7 +30,7 @@ public class Verifier {
 				PointsToAnalysis pointerAnalysis = new PointsToAnalysis(new BriefUnitGraph(b), loops);
 				ObjectSetPerVar aliases = pointerAnalysis.run();
 				System.out.println("Aliases: " + aliases);
-				Analysis analysis = new Analysis(new BriefUnitGraph(b));
+				Analysis analysis = new Analysis(new BriefUnitGraph(b), aliases);
 				analysis.run();
 				// ....
 			}

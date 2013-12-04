@@ -36,21 +36,6 @@ public class PointsToAnalysis extends ForwardFlowAnalysis<Unit, ObjectSetPerVar>
 	protected void flowThrough(ObjectSetPerVar in, Unit op, ObjectSetPerVar out) {
 		Stmt s = (Stmt)op;
 
-//		int count = 0;
-//		for(Loop l : loops){
-//			if(l.getHead().equals(s)){
-//				if(!loopsVisited.containsKey(l)){
-//					loopsVisited.put(l,0);
-//					count = 1;
-//				}else {
-//					count = loopsVisited.get(l);
-//					loopsVisited.put(l, count++);
-//				}
-//				System.out.println("Operation (pointer analysis): " + op + "   - " + op.getClass().getName() + "\n      in: " + in
-//						+ "\n      out: " + out);
-//			}
-//		}
-		
 		out.copyFrom(in);
 		s.apply(new PointsToStmtAnalyzer(in, out));
 		System.out.println("Operation (pointer analysis): " + op + "   - " + op.getClass().getName() + "\n      in: " + in

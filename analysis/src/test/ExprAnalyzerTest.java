@@ -7,6 +7,7 @@ import org.junit.Test;
 import soot.jimple.IntConstant;
 import soot.jimple.internal.JAddExpr;
 import ch.ethz.pa.ExprAnalyzer;
+import ch.ethz.pa.ObjectSetPerVar;
 import ch.ethz.pa.domain.Domain;
 
 public class ExprAnalyzerTest {
@@ -51,7 +52,7 @@ public class ExprAnalyzerTest {
 	 */
 	@Test
 	public void testCaseAddExprAddExpr() {
-		ExprAnalyzer ea = new ExprAnalyzer(null);
+		ExprAnalyzer ea = new ExprAnalyzer(null, new ObjectSetPerVar());
 		new JAddExpr(IntConstant.v(1), IntConstant.v(1)).apply(ea);
 		assertEquals(new Domain(2), ea.getResult());
 	}

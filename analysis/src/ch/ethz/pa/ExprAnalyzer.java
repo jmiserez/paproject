@@ -1,6 +1,11 @@
 package ch.ethz.pa;
 
+import java.util.Set;
+
 import soot.Local;
+import soot.RefType;
+import soot.SootMethod;
+import soot.Type;
 import soot.Value;
 import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
@@ -16,6 +21,8 @@ import soot.jimple.MulExpr;
 import soot.jimple.NeExpr;
 import soot.jimple.SubExpr;
 import soot.jimple.VirtualInvokeExpr;
+import soot.jimple.internal.JimpleLocal;
+import soot.tagkit.Tag;
 import soot.toolkits.scalar.Pair;
 import ch.ethz.pa.domain.AbstractDomain;
 import ch.ethz.pa.domain.AbstractDomain.PairSwitch;
@@ -24,6 +31,7 @@ import ch.ethz.pa.domain.Domain;
 public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	StmtAnalyzer sa;
 	AbstractDomain result;
+	ObjectSetPerVar aliases;
 	
 	private final static AbstractDomain[] SENSOR_ID_INTERVALS;
 	static {
@@ -36,8 +44,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	/*
 	 * Expression visitor, result is stored in local variable result
 	 */
-	public ExprAnalyzer(StmtAnalyzer sa) {
+	public ExprAnalyzer(StmtAnalyzer sa, ObjectSetPerVar aliases) {
 		this.sa = sa;
+		this.aliases = aliases;
 	}
 	
 	/*
@@ -94,6 +103,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	@Override
 	public void defaultCase(Object v) {
+		System.err.println("Warning: ExprAnalyzer.defaultCase called for: "+v);
 		result = new Domain().getTop();
 	}
 
@@ -142,15 +152,34 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		doCondExpr(v);
 	}
 	
+	/**
+	 * This is the case where the the value is actually read into some variable, i.e.:
+	 * 
+	 * x = y.readSensor();
+	 */
 	@Override
-	public void caseVirtualInvokeExpr(VirtualInvokeExpr expr) {
-		if(expr.getMethod().getName().equals("readSensor")){
-			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
-			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
-			handleReadSensor(expr, sa.fallState);
-			result.copyFrom(new Domain(0, 15));
+	public void caseVirtualInvokeExpr(VirtualInvokeExpr v) {
+		Value bval = v.getBase();
+		if (bval instanceof JimpleLocal) {
+			JimpleLocal blocal = ((JimpleLocal)bval);
+			String varName = blocal.getName();
+			Type varType = blocal.getType();
+			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
+				
+				Set<Tag> mayObjects = aliases.getObjectSetForVar(varName);
+				
+				SootMethod meth = v.getMethod();
+				if("adjustValue".equals(meth.getName()) && meth.getParameterCount() == 2){
+					handleAdjustValue(v, sa.fallState, mayObjects);
+				} else if("readSensor".equals(meth.getName()) && meth.getParameterCount() == 1){
+					handleReadSensor(v, sa.fallState, mayObjects);
+					// Note: this might just a statement (without an assignment). We still return a new Domain, the StmtAnalyzer decides what to with it
+					result = new Domain(0, 15);
+				}
+			}
 		}
 	}
+	
 
 	/*
 	 * Calculate and update states based on the condition.
@@ -216,9 +245,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		return s.result;
 	}
 	
-	protected void handleAdjustValue(InvokeExpr adjustValue, IntervalPerVar m) {
-		Value sensorIdArg = ((InvokeExpr) adjustValue).getArg(0);
-		Value newValueArg = ((InvokeExpr) adjustValue).getArg(1);
+	protected void handleAdjustValue(InvokeExpr adjustValue, IntervalPerVar m, Set<Tag> mayObjects) {
+		Value sensorIdArg = adjustValue.getArg(0);
+		Value newValueArg = adjustValue.getArg(1);
 		AbstractDomain sensorIdInterval = new Domain();
 		AbstractDomain newValueInterval = new Domain();
 		this.valueToInterval(sensorIdInterval, sensorIdArg);
@@ -231,17 +260,19 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		}
 		for (int i = 0; i <= 15; i++){
 			if(SENSOR_ID_INTERVALS[i].contains(sensorIdInterval)){
-				int count = m.getAdjustValueCountForVar("defaultObj", i); //TODO: change defaultObj to pointer analysis
-				count++;
-				m.putAdjustValueCountForVar("defaultObj", i, count); //TODO: change defaultObj to pointer analysis
-				if(count > 1){
-					throw new ProgramIsUnsafeException("adjustValue for object "+ "defaultObj" +" was called more than once");
+				for(Tag t : mayObjects){
+					int count = m.getAdjustValueCountForVar(t.toString(), i);
+					count++;
+					m.putAdjustValueCountForVar(t.toString(), i, count);
+					if(count > 1){
+						throw new ProgramIsUnsafeException("adjustValue for object "+ t.toString() +" was called more than once");
+					}
 				}
 			}
 		}
 	}
 	
-	protected void handleReadSensor(InvokeExpr readSensor, IntervalPerVar m) {
+	protected void handleReadSensor(InvokeExpr readSensor, IntervalPerVar m, Set<Tag> mayObjects) {
 		Value sensorIdArg = ((InvokeExpr) readSensor).getArg(0);
 		AbstractDomain sensorIdInterval = new Domain();
 		this.valueToInterval(sensorIdInterval, sensorIdArg);
@@ -250,11 +281,13 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		}
 		for (int i = 0; i <= 15; i++){
 			if(SENSOR_ID_INTERVALS[i].contains(sensorIdInterval)){
-				int count = m.getAdjustValueCountForVar("defaultObj", i); //TODO: change defaultObj to pointer analysis
-				count++;
-				m.putAdjustValueCountForVar("defaultObj", i, count); //TODO: change defaultObj to pointer analysis
-				if(count > 1){
-					throw new ProgramIsUnsafeException("adjustValue for object "+ "defaultObj" +" was called more than once");
+				for(Tag t : mayObjects){
+					int count = m.getAdjustValueCountForVar(t.toString(), i); //TODO: change defaultObj to pointer analysis
+					count++;
+					m.putAdjustValueCountForVar(t.toString(), i, count); //TODO: change defaultObj to pointer analysis
+					if(count > 1){
+						throw new ProgramIsUnsafeException("readSensor for object "+ t.toString() +" was called more than once");
+					}
 				}
 			}
 		}

@@ -1,12 +1,10 @@
 package ch.ethz.pa;
 
 import soot.Local;
-import soot.Type;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
-import soot.jimple.FieldRef;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
@@ -21,12 +19,14 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	protected IntervalPerVar branchState;
 	protected IntervalPerVar currentState;
 	private ExprAnalyzer ea;
+	private ObjectSetPerVar aliases;
 
-	public StmtAnalyzer(IntervalPerVar currentState, IntervalPerVar fallState, IntervalPerVar branchState) {
+	public StmtAnalyzer(IntervalPerVar currentState, IntervalPerVar fallState, IntervalPerVar branchState, ObjectSetPerVar aliases) {
 		this.fallState = fallState;
 		this.branchState = branchState;
 		this.currentState = currentState;
-		this.ea = new ExprAnalyzer(this);
+		this.ea = new ExprAnalyzer(this, aliases);
+		this.aliases = aliases;
 	}
 
 	@Override
@@ -43,7 +43,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	public void caseIdentityStmt(IdentityStmt stmt) {
 		handleAssign(stmt);
 	}
-
+	
 	private void handleAssign(DefinitionStmt stmt) {
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
@@ -64,27 +64,14 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	@Override
 	public void caseInvokeStmt(InvokeStmt stmt) {
 		// A method is called. e.g. AircraftControl.adjustValue
-
-		FieldRef target = stmt.getFieldRef();
-		//TODO: check if aircraft control, get aliases
-		
 		// You need to check the parameters here.
 		InvokeExpr expr = stmt.getInvokeExpr();
-		if (expr.getMethod().getName().equals("adjustValue")) {
-			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
-			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
-			ea.handleAdjustValue(expr, fallState);
-		} else if(expr.getMethod().getName().equals("readSensor")){
-			// Note: this is just a statement (without an assignment!), therefore we do need to change any intervals
-			
-			// TODO: Check that this is really the method from the AircraftControl class. (how? -> has two arguments, pointer analysis)
-			// TODO: Increment invocation count for THIS AircraftControl object in the global table (pointer analysis)
-			ea.handleReadSensor(expr, fallState);
-		}
+		expr.apply(ea); //visit expression, but we are not interested in the result here
 	}
 
 	@Override
 	public void defaultCase(Object obj) {
+		System.err.println("Warning: StmtAnalyzer.defaultCase called for: "+obj);
 		//TODO: Set everything to TOP
 	}
 
