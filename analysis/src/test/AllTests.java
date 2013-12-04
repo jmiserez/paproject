@@ -40,11 +40,6 @@ public class AllTests {
     	assertEquals(result,  "Program is SAFE\n");
     }
     
-    @Test
-    public void testAircraftControl() {
-    	String result = verify("AircraftControl");
-    	assertEquals(result,  "Program is UNSAFE\n");
-    }
 	@Test
 	public void testExampleTest() {
 		String result = verify("ExampleTest");
