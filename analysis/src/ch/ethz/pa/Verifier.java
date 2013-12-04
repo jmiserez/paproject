@@ -30,8 +30,8 @@ public class Verifier {
 				PointsToAnalysis pointerAnalysis = new PointsToAnalysis(new BriefUnitGraph(b), loops);
 				ObjectSetPerVar aliases = pointerAnalysis.run();
 				System.out.println("Aliases: " + aliases);
-//				Analysis analysis = new Analysis(new BriefUnitGraph(b));
-//				analysis.run();
+				Analysis analysis = new Analysis(new BriefUnitGraph(b));
+				analysis.run();
 				// ....
 			}
 		}catch(ProgramIsUnsafeException e){

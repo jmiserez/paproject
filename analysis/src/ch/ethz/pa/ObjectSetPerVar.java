@@ -10,7 +10,7 @@ import ch.ethz.pa.util.PaUtils;
 
 public class ObjectSetPerVar{
 	
-	private HashMap<String, HashSet<Tag>> objects; //TODO replace object with Soot type
+	private HashMap<String, HashSet<Tag>> objects;
 
 	public ObjectSetPerVar() {
 		objects = new HashMap<String, HashSet<Tag>>();

@@ -1,12 +1,12 @@
 package ch.ethz.pa;
 
 import soot.Local;
-import soot.RefType;
 import soot.Type;
 import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.FieldRef;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
@@ -52,13 +52,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 		if (lval instanceof JimpleLocal) {
 			JimpleLocal llocal = ((JimpleLocal)lval);
 			String varName = llocal.getName();
-			Type varType = llocal.getType();
-			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
-				// TODO: putPointerSetForVar(varName, rvar);
-				// TODO: assert we have the aliases 
-			} else {
-				fallState.putIntervalForVar(varName, rvar);
-			}
+			fallState.putIntervalForVar(varName, rvar);
 		}
 		ea.valueToInterval(rvar, rval);
 	}
@@ -71,6 +65,9 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	public void caseInvokeStmt(InvokeStmt stmt) {
 		// A method is called. e.g. AircraftControl.adjustValue
 
+		FieldRef target = stmt.getFieldRef();
+		//TODO: check if aircraft control, get aliases
+		
 		// You need to check the parameters here.
 		InvokeExpr expr = stmt.getInvokeExpr();
 		if (expr.getMethod().getName().equals("adjustValue")) {

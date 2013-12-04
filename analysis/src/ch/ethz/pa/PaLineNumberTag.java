@@ -12,4 +12,11 @@ public class PaLineNumberTag extends LineNumberTag {
 	public String getName() {
 		return "PaLineNumber";
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof PaLineNumberTag)) return false;
+		PaLineNumberTag other = (PaLineNumberTag) o;
+		return other.getLineNumber() == getLineNumber();
+	}
 }
