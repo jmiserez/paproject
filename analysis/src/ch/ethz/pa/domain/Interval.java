@@ -137,6 +137,10 @@ class Interval extends AbstractDomain {
 			this.i1 = (Interval) i1;
 			this.i2 = (Interval) i2;
 		}
+		
+		/*
+		 * There is test cases for these in DomainTest
+		 */
 
 		@Override
 		public Pair<AbstractDomain, AbstractDomain> doEqExpr(ConditionExpr v) {
@@ -150,26 +154,22 @@ class Interval extends AbstractDomain {
 
 		@Override
 		public Pair<AbstractDomain, AbstractDomain> doLeExpr(ConditionExpr v) {
-			// TODO: Create testcase
-			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
-		}
-
-		@Override
-		public Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v) {
-			// TODO: Create testcase
 			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(pInf)), i1.join(mInf).meet(i2));
 		}
 
 		@Override
+		public Pair<AbstractDomain, AbstractDomain> doGeExpr(ConditionExpr v) {
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.join(mInf)), i1.join(pInf).meet(i2));
+		}
+
+		@Override
 		public Pair<AbstractDomain, AbstractDomain> doGtExpr(ConditionExpr v) {
-			// TODO: Create testcase
-			return new Pair<AbstractDomain, AbstractDomain>(i2.join(i1.minus(one)), i1.meet(i2.plus(one)));
+			return new Pair<AbstractDomain, AbstractDomain>(i2.plus(one).join(mInf).meet(i1), i1.minus(one).join(pInf).meet(i2));
 		}
 
 		@Override
 		public Pair<AbstractDomain, AbstractDomain> doLtExpr(ConditionExpr v) {
-			// TODO: Create testcase
-			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2.minus(one)), i2.meet(i1.plus(one)));
+			return new Pair<AbstractDomain, AbstractDomain>(i1.meet(i2.minus(one).join(pInf)), i1.plus(one).join(mInf).meet(i2));
 		}
 	}
 
