@@ -11,6 +11,7 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.IdentityStmt;
+import soot.jimple.internal.JNewExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
@@ -19,12 +20,10 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 	
 	protected ObjectSetPerVar in;
 	protected ObjectSetPerVar out;
-	private PointsToExprAnalyzer ea;
 	
 	public PointsToStmtAnalyzer(ObjectSetPerVar in, ObjectSetPerVar out) {
 		this.in = in;
 		this.out = out;
-		this.ea = new PointsToExprAnalyzer(this);
 	}
 	
 	@Override
@@ -41,7 +40,7 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 		LineNumberTag lnt = (LineNumberTag) stmt.getTag("LineNumberTag");
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
-		System.out.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
+		System.out.println("Line " + lnt.getLineNumber() + ": " + lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
 		HashSet<Tag> rvar = new HashSet<Tag>();
 		if (lval instanceof JimpleLocal) {
 			JimpleLocal llocal = ((JimpleLocal)lval);
@@ -49,12 +48,25 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 			Type varType = llocal.getType();
 			if(varType instanceof RefType && "AircraftControl".equals(((RefType)varType).getClassName())){
 				out.putObjectSetForVar(varName, rvar);
-				ea.valueToObjectSet(rvar, rval, lnt);
+				Set<Tag> lptrs = out.getObjectSetForVar(varName);
+				// no need to use ExprAnalyzer here, we only need to handle 2 cases
+				if(rval instanceof JNewExpr){
+					//remember we are doing flow-INsensitive analysis, so we need to take the union
+					lptrs.add(lnt);
+					System.err.println("DEBUG: ADD POINTER: "+varName+" -(new)-> "+lnt.getLineNumber());
+				} else if (rval instanceof JimpleLocal){
+					JimpleLocal rlocal = ((JimpleLocal)rval);
+					lptrs.addAll(in.getObjectSetForVar(rlocal.getName()));
+					System.err.println("DEBUG: ADD POINTER: "+varName+" -(var)> "+rlocal.getName()+"-(alias)->"+in.getObjectSetForVar(rlocal.getName()));
+				} else {
+					//TODO:unsupported, we do not know what object is assigned to this variable. Assume all of them (TOP)
+					System.err.println("rval not instanceof JNewExpr or JimpleLocal!");
+				}
 			}
 		}
 		// else do nothing
 	}
-
+	
 	public Set<Tag> getLocalVariable(Local v) {
 		return in.getObjectSetForVar(((Local)v).getName());
 	}

@@ -24,8 +24,8 @@ public class Verifier {
 				PointsToAnalysis pointerAnalysis = new PointsToAnalysis(new BriefUnitGraph(method.retrieveActiveBody()));
 				ObjectSetPerVar aliases = pointerAnalysis.run();
 				System.out.println("Aliases: " + aliases);
-				Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()));
-				analysis.run();
+//				Analysis analysis = new Analysis(new BriefUnitGraph(method.retrieveActiveBody()));
+//				analysis.run();
 				// ....
 			}
 		}catch(ProgramIsUnsafeException e){

@@ -38,6 +38,11 @@ public class AllTests {
     public void testPointerTest1() {
     	verify("PointerTest1");
     }
+    
+    @Test
+    public void testPointerTest2() {
+    	verify("PointerTest2");
+    }
 
     @Test
     public void testReadValueWithoutAssignment() {
