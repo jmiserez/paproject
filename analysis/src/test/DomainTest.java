@@ -1,28 +1,26 @@
 package test;
 
-import static org.junit.Assert.*;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ch.ethz.pa.ExprAnalyzer;
-import ch.ethz.pa.domain.Domain;
-import ch.ethz.pa.domain.AbstractDomain;
-import soot.Type;
-import soot.UnitPrinter;
 import soot.Value;
-import soot.ValueBox;
 import soot.jimple.ConditionExpr;
 import soot.jimple.IntConstant;
-import soot.jimple.internal.*;
+import soot.jimple.internal.JEqExpr;
+import soot.jimple.internal.JGeExpr;
+import soot.jimple.internal.JGtExpr;
+import soot.jimple.internal.JLeExpr;
+import soot.jimple.internal.JLtExpr;
+import soot.jimple.internal.JNeExpr;
 import soot.toolkits.scalar.Pair;
-import soot.util.Switch;
+import ch.ethz.pa.ExprAnalyzer;
+import ch.ethz.pa.ObjectSetPerVar;
+import ch.ethz.pa.domain.AbstractDomain;
+import ch.ethz.pa.domain.Domain;
 
 public class DomainTest {
 	
@@ -31,7 +29,7 @@ public class DomainTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		ea = new ExprAnalyzer(null);
+		ea = new ExprAnalyzer(null,new ObjectSetPerVar());
 		dummyVal = IntConstant.v(0);
 	}
 
@@ -39,6 +37,17 @@ public class DomainTest {
 	public void tearDown() throws Exception {
 	}
 
+	@Test
+	public void testContains() {
+		assertTrue(new Domain(0,0).contains(new Domain(0,0)));
+		assertTrue(new Domain(-2,2).contains(new Domain(0,0)));
+		assertTrue(new Domain(-4,4).contains(new Domain(-2,2)));
+		assertTrue(new Domain(1,4).contains(new Domain(2,4)));
+		assertTrue(new Domain(0,10).contains(new Domain(1,1)));
+		assertTrue(new Domain(0,15).contains(new Domain(1,1)));
+		
+	}
+	
 	@Test
 	public void testPlus() {
 		assertEquals(new Domain(2, 2), new Domain(1, 1).plus(new Domain(1, 1)));

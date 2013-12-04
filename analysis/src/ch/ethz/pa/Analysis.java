@@ -10,9 +10,13 @@ import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
 
 // Implement your numerical analysis here.
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
-	public Analysis(UnitGraph g) {
+	
+	ObjectSetPerVar aliases;
+	
+	public Analysis(UnitGraph g, ObjectSetPerVar aliases) {
 		super(g);
 		System.out.println(g.toString());
+		this.aliases = aliases;
 	}
 	
 	void run() {
@@ -39,7 +43,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
 		
-		s.apply(new StmtAnalyzer(current, fallState, branchState));
+		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
 		
 		// TODO: Maybe avoid copying objects too much. Feel free to optimize.
 		for (IntervalPerVar fnext : fallOut) {
