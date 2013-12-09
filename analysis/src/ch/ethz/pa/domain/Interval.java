@@ -9,8 +9,8 @@ import soot.toolkits.scalar.Pair;
 class Interval extends AbstractDomain {
 	
 	// TODO: Do you need to handle infinity or empty interval?
-	private final static int MIN_INF = -9999; //TODO handle infinity better
-	private final static int MAX_INF = 9999; 
+	private final static int MIN_INF = Integer.MIN_VALUE; //TODO handle infinity better
+	private final static int MAX_INF =  Integer.MAX_VALUE; 
 	private final static Interval TOP = new Interval(-MIN_INF, MAX_INF);
 	private final static Interval BOT = new Interval();
 	
