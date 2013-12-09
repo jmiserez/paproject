@@ -1,4 +1,8 @@
 package ch.ethz.pa;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 import soot.Body;
 import soot.Scene;
 import soot.SootClass;
@@ -8,6 +12,8 @@ import soot.toolkits.graph.LoopNestTree;
 
 
 public class Verifier {
+	
+	private static final boolean SUPPRESS_OUTPUT = true;
 	
 	public static void main(String[] args) {
 		if (args.length != 1) {
@@ -19,6 +25,18 @@ public class Verifier {
 		
 		boolean safe = true;
 		
+		PrintStream stdout = System.out;
+		PrintStream stderr = System.err;
+		
+		if(SUPPRESS_OUTPUT){
+			System.setOut(new PrintStream(new OutputStream() {
+				public void write(int b) throws IOException {}
+			}));
+			System.setErr(new PrintStream(new OutputStream() {
+				public void write(int b) throws IOException {}
+			}));
+		}
+
 	/* Use the following to iterate over the class methods. */
 		try{
 			for (SootMethod method : c.getMethods()) {
@@ -37,6 +55,9 @@ public class Verifier {
 		}catch(ProgramIsUnsafeException e){
 			safe = false;
 			System.err.println(e.getMessage());
+		}finally{
+	    	System.setOut(stdout); //restore output
+	    	System.setErr(stderr); //restore output
 		}
 		if (safe){
 			System.out.println("Program is SAFE");
