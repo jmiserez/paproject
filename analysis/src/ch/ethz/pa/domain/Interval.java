@@ -74,14 +74,14 @@ class Interval extends AbstractDomain {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow.
-		return handleOverflow(new Interval(this.lower + i.lower, this.upper + i.upper));
+		return handleOverflow(new Interval(this.lower + Math.min(i.lower, i.upper), this.upper + Math.max(i.lower, i.upper)));
 	}
 
 	public AbstractDomain minus(AbstractDomain a) {
 		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		// TODO: Handle overflow. 
-		return handleOverflow(new Interval(this.lower - i.lower, this.upper - i.upper));
+		return handleOverflow(new Interval(this.lower - Math.max(i.lower, i.upper), this.upper - Math.min(i.lower, i.upper)));
 	}
 
 	public AbstractDomain multiply(AbstractDomain a) {
