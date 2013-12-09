@@ -52,58 +52,58 @@ public class AllTests {
     @Test
     public void testReadValueWithoutAssignment() {
     	String result = verify("ReadValueWithoutAssignment");
-    	assertEquals(result,  "Program is SAFE\n");
+    	assertEquals("Program is SAFE\n", result);
     }
     
 	@Test
 	public void testExampleTest() {
 		String result = verify("ExampleTest");
-		assertEquals(result,  "Program is UNSAFE\n");
+		assertEquals("Program is UNSAFE\n", result);
 	}
 	@Test
 	public void testExampleTest1Speed() {
 		String result = verify("ExampleTest1");
 		//value is in [-989, 989]
-		assertEquals(result,  "Program is SAFE\n");
+		assertEquals("Program is SAFE\n", result);
 	}
 	@Test
 	public void testExampleTest2Height() {
 		String result = verify("ExampleTest2");
 		//program is safe as per comments
-		assertEquals(result,  "Program is SAFE\n");
+		assertEquals("Program is SAFE\n", result);
 	}
 	@Test
 	public void testExampleTest3HeightWithBug() {
 		String result = verify("ExampleTest3");
 		//program has a BUG as per comments
-		assertEquals(result,  "Program is UNSAFE\n");
+		assertEquals("Program is UNSAFE\n", result);
 	}
 	
 	@Test
 	public void testExampleTest4Pressure() {
 		String result = verify("ExampleTest4");
 		//program is safe due to condition in the end
-		assertEquals(result, "Program is SAFE\n");
+		assertEquals(result, "Program is SAFE\n", result);
 	}
 	
 	@Test
 	public void testOverflowTest() {
 		String result = verify("OverflowTest");
 		// program is UNSAFE due to overflow
-		assertEquals(result,  "Program is UNSAFE\n");
+		assertEquals("Program is UNSAFE\n", result);
 	}
 	
 	@Test
 	public void testWideningTest() {
 		String result = verify("WideningTest");
 		//program is SAFE, but widening will say UNSAFE if < 1000 iterations (which is sound, but not precise)
-		assertEquals(result,  "Program is SAFE\n");
+		assertEquals("Program is SAFE\n", result);
 	}
 	
 	@Test
 	public void testNotTest() {
 		String result = verify("NotTest");
-		assertEquals(result,  "Program is UNSAFE\n");
+		assertEquals("Program is UNSAFE\n", result);
 	}
 	
 	private String verify(String className){
