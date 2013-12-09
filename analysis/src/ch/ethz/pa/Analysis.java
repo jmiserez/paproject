@@ -24,7 +24,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
 	public Analysis(UnitGraph g, ObjectSetPerVar aliases, LoopNestTree loops) {
 		super(g);
-		System.out.println(g.toString());
+		System.err.println(g.toString());
 		this.aliases = aliases;
 		this.loops = loops;
 	}
@@ -55,7 +55,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 				currentLoops.add(l);
 			}
 		}
-		System.out.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
+		System.err.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
 		boolean skip = false;
 		if(currentLoops.size() > 0){
@@ -71,7 +71,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			
 			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
 			if(s.equals(loopHead)){
-				System.out.println("Entering loop");
+				System.err.println("Entering loop");
 				//we are at the head entering a loop, update count and reset all widenings of nested loops
 				currentAnnotation.headCount++;
 				currentAnnotation.headStmtValues = current.copy();
@@ -93,7 +93,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			Loop currentInner = currentLoops.get(0);
 			Stmt loopBackJump = currentInner.getBackJumpStmt();  //the last statement in the loop, not necessarily the goto
 			if(s.equals(loopBackJump)){
-				System.out.println("Last statement of loop");
+				System.err.println("Last statement of loop");
 				//this was the last instruction in the loop, after this comes the merge() operation
 				//need to create a diff between head and backJump
 				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
@@ -132,9 +132,9 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 					prevDiff = diff;
 				}
 				if(wideningNecessary){
-					System.out.println(
+					System.err.println(
 							 "      fallState: " + fallState + "\n      branchState: " + branchState);
-					System.out.println("Doing widening.");
+					System.err.println("Doing widening.");
 					//if we find one, widen all the variables currently in the diffList, regardless of count
 					for(Entry<String, Integer> diff : currentDiff.entrySet()){
 						String varName = diff.getKey();
@@ -142,7 +142,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 						AbstractDomain interval = fallState.getIntervalForVar(varName);
 						fallState.putIntervalForVar(varName, interval.widen(direction));
 					}
-					System.out.println(
+					System.err.println(
 							 "      fallState: " + fallState + "\n      branchState: " + branchState);
 					currentAnnotation.widened = true;
 				}
@@ -162,7 +162,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			}
 		}		
 		
-		System.out.println(
+		System.err.println(
 				 "      fallState: " + fallState + "\n      branchState: " + branchState);
 	}
 
@@ -183,7 +183,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		// TODO: join, widening, etc goes here.
 		IntervalPerVar.join(src1, src2, trg);
 		
-		System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
+		System.err.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
 				src1.toString(), src2.toString(), trg.toString());
 	}
 

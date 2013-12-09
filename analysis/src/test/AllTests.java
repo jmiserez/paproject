@@ -83,7 +83,7 @@ public class AllTests {
 	public void testExampleTest4Pressure() {
 		String result = verify("ExampleTest4");
 		//program is safe due to condition in the end
-		assertEquals(result,  "Program is SAFE\n");
+		assertEquals(result, "Program is SAFE\n");
 	}
 	
 	@Test

@@ -25,11 +25,11 @@ public class Verifier {
 				Body b = method.retrieveActiveBody();
 				LoopNestTree loops = new LoopNestTree(b);
 				LineNumberAnalysis lineNumberAnalysis = new LineNumberAnalysis(new BriefUnitGraph(b));
-				System.out.println("Method " + method.getName() + "(): ");
+				System.err.println("Method " + method.getName() + "(): ");
 				lineNumberAnalysis.run();
 				PointsToAnalysis pointerAnalysis = new PointsToAnalysis(new BriefUnitGraph(b), loops);
 				ObjectSetPerVar aliases = pointerAnalysis.run();
-				System.out.println("Aliases: " + aliases);
+				System.err.println("Aliases: " + aliases);
 				Analysis analysis = new Analysis(new BriefUnitGraph(b), aliases, loops);
 				analysis.run();
 				// ....
@@ -39,9 +39,9 @@ public class Verifier {
 			System.err.println(e.getMessage());
 		}
 		if (safe){
-			System.out.println("Program is SAFE\n");
+			System.out.println("Program is SAFE");
 		}else {
-			System.out.println("Program is UNSAFE\n");
+			System.out.println("Program is UNSAFE");
 		}
 	}
 	

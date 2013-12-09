@@ -48,7 +48,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	private void handleAssign(DefinitionStmt stmt) {
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
-		System.out.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
+		System.err.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
 		AbstractDomain rvar = new Domain();
 		if (lval instanceof JimpleLocal) {
 			JimpleLocal llocal = ((JimpleLocal)lval);
