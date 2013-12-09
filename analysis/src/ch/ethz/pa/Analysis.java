@@ -29,7 +29,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	}
 	
 	void run() {
-		System.err.println("WIDENING_ITERATIONS = "+WIDENING_ITERATIONS);
 		wideningInformation.clear();
 		doAnalysis();
 	}

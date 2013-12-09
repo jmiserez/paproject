@@ -224,7 +224,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 				} else if("readSensor".equals(meth.getName()) && meth.getParameterCount() == 1){
 					handleReadSensor(v, sa.fallState, mayObjects);
 					// Note: this might just a statement (without an assignment). We still return a new Domain, the StmtAnalyzer decides what to with it
-					result = new Domain(0, 15);
+					result = new Domain(-999,999);
 				}
 			}
 		}

@@ -103,8 +103,8 @@ public class AllTests {
 		Analysis.WIDENING_ITERATIONS = 5;
 		String result = verify("WideningTest");
 		assertEquals("Program is UNSAFE\n", result);
-		Analysis.WIDENING_ITERATIONS = 501;
-		result = verify("WideningTest");
+		Analysis.WIDENING_ITERATIONS = 1000;
+		result = verify("WideningTest"); //no widening takes place here
 		assertEquals("Program is SAFE\n", result);
 	}
 	

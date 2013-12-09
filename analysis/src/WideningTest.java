@@ -3,7 +3,7 @@ public class WideningTest {
 	
 	public static void main() {
 		AircraftControl ac = new AircraftControl();
-		int pressure = ac.readSensor(5);
+		int pressure = 0;
 		
 		while(pressure < 500){
 			pressure++;
