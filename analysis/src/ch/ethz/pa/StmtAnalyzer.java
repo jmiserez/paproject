@@ -71,7 +71,9 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 
 	@Override
 	public void defaultCase(Object obj) {
+		System.out.flush();
 		System.err.println("Warning: StmtAnalyzer.defaultCase called for: "+obj);
+		System.err.flush();
 		//TODO: Set everything to TOP
 	}
 

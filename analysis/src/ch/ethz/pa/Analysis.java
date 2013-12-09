@@ -1,26 +1,39 @@
 package ch.ethz.pa;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
 
 import soot.Unit;
 import soot.jimple.Stmt;
+import soot.jimple.toolkits.annotation.logic.Loop;
+import soot.toolkits.graph.LoopNestTree;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
 
-
-// Implement your numerical analysis here.
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
-	ObjectSetPerVar aliases;
+	private final static int WIDENING_ITERATIONS = 5;
 	
-	public Analysis(UnitGraph g, ObjectSetPerVar aliases) {
+	ObjectSetPerVar aliases;
+	LoopNestTree loops;
+	TreeMap<Loop,Integer> loopCounts = new TreeMap<Loop, Integer>();
+	List<Loop> widenedLoops = new ArrayList<Loop>();
+	HashMap<String, Integer> loopChanges = new HashMap<String,Integer>();
+	
+	public Analysis(UnitGraph g, ObjectSetPerVar aliases, LoopNestTree loops) {
 		super(g);
 		System.out.println(g.toString());
 		this.aliases = aliases;
+		this.loops = loops;
 	}
 	
 	void run() {
 		//TODO reenable next line
+		loopCounts.clear();
+		widenedLoops.clear();
+		loopChanges.clear();
 		doAnalysis();
 	}
 	
@@ -40,10 +53,48 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		IntervalPerVar branchState = new IntervalPerVar();
 		branchState.copyFrom(current);
 		
-		System.out.println("Operation: " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
+		List<Loop> currentLoops = new ArrayList<Loop>();
+		//The LoopNestTree iterator will always return the innermost loops first
+		for(Loop l : loops){
+			if(l.getLoopStatements().contains(s)){
+				currentLoops.add(l);
+			}
+		}
+		//currentLoops.size() is the current nesting depth
 		
+		System.out.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
-		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
+		if(currentLoops.size() > 0){
+			Loop currentInner = currentLoops.get(0);
+			Stmt loopHead = currentInner.getHead();
+			if(s.equals(loopHead)){
+				//we are at the head, update count
+				int loopCount = 0;
+				if(loopCounts.containsKey(currentInner)){
+					loopCount = loopCounts.get(currentInner);
+					loopCounts.put(currentInner, loopCount++);
+				} else {
+					//first time we enter this loop, we must be at loopHead
+					if(!loopHead.equals(s)){
+						System.err.println("Warning: did not enter loop through loop head!");
+					}
+					loopCounts.put(currentLoops.get(0), 1);
+				}
+				
+			}
+			
+		}
+		
+		boolean skip = false;
+		for(Loop l : currentLoops){
+			if(widenedLoops.contains(l)){
+				skip = true;
+				break;
+			}
+		}
+		if(!skip){
+			s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
+		}
 		
 		// TODO: Maybe avoid copying objects too much. Feel free to optimize.
 		for (IntervalPerVar fnext : fallOut) {

@@ -86,6 +86,12 @@ public class AllTests {
 		assertEquals(result,  "Program is SAFE\n");
 	}
 	
+	@Test
+	public void testNotTest() {
+		String result = verify("NotTest");
+		assertEquals(result,  "Program is UNSAFE\n");
+	}
+	
 	private String verify(String className){
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream myOut = new ByteArrayOutputStream();

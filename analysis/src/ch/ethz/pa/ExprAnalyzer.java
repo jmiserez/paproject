@@ -9,7 +9,9 @@ import soot.Type;
 import soot.Value;
 import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
+import soot.jimple.AndExpr;
 import soot.jimple.ConditionExpr;
+import soot.jimple.DivExpr;
 import soot.jimple.EqExpr;
 import soot.jimple.GeExpr;
 import soot.jimple.GtExpr;
@@ -19,8 +21,14 @@ import soot.jimple.LeExpr;
 import soot.jimple.LtExpr;
 import soot.jimple.MulExpr;
 import soot.jimple.NeExpr;
+import soot.jimple.NegExpr;
+import soot.jimple.OrExpr;
+import soot.jimple.ShlExpr;
+import soot.jimple.ShrExpr;
 import soot.jimple.SubExpr;
+import soot.jimple.UshrExpr;
 import soot.jimple.VirtualInvokeExpr;
+import soot.jimple.XorExpr;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.Tag;
 import soot.toolkits.scalar.Pair;
@@ -103,7 +111,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	 */
 	@Override
 	public void defaultCase(Object v) {
+		System.out.flush();
 		System.err.println("Warning: ExprAnalyzer.defaultCase called for: "+v);
+		System.err.flush();
 		result = new Domain().getTop();
 	}
 
@@ -115,6 +125,11 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	@Override
 	public void caseMulExpr(MulExpr v) {
 		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseDivExpr(DivExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).divide(valueToInterval(v.getOp2())));
 	}
 
 	@Override
@@ -150,6 +165,41 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	@Override
 	public void caseLtExpr(LtExpr v) {
 		doCondExpr(v);
+	}
+	
+	@Override
+	public void caseAndExpr(AndExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).and(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseOrExpr(OrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).or(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseXorExpr(XorExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).xor(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseNegExpr(NegExpr v) {
+		result.copyFrom(valueToInterval(v.getOp()).neg());
+	}
+	
+	@Override
+	public void caseShlExpr(ShlExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).shl(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseShrExpr(ShrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).shr(valueToInterval(v.getOp2())));
+	}
+	
+	@Override
+	public void caseUshrExpr(UshrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).ushr(valueToInterval(v.getOp2())));
 	}
 	
 	/**

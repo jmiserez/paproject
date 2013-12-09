@@ -24,6 +24,15 @@ public abstract class AbstractDomain {
 	public abstract AbstractDomain plus(AbstractDomain other);
 	public abstract AbstractDomain minus(AbstractDomain other);
 	public abstract AbstractDomain multiply(AbstractDomain other);
+	public abstract AbstractDomain divide(AbstractDomain other);
+	public abstract AbstractDomain and(AbstractDomain other);
+	public abstract AbstractDomain or(AbstractDomain other);
+	public abstract AbstractDomain xor(AbstractDomain other);
+	public abstract AbstractDomain neg(); // negative
+	public abstract AbstractDomain shl(AbstractDomain other); // shift arithmetic left
+	public abstract AbstractDomain shr(AbstractDomain other); // shift arithmetic right
+	public abstract AbstractDomain ushr(AbstractDomain other); // shift logical right ("unsigned shift right")
+	public abstract AbstractDomain rem(AbstractDomain other); // remainder (modulo): this % other
 
 	public abstract AbstractDomain getTop();
 	public abstract AbstractDomain getBot();
