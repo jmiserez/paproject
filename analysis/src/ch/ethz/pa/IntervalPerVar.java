@@ -8,21 +8,17 @@ import ch.ethz.pa.util.PaUtils;
 
 public class IntervalPerVar {
 	
-	public class IntervalPerVarDiff {
-		public HashMap<String, Integer> valuesDiff;
-		
-		public IntervalPerVarDiff(IntervalPerVar first, IntervalPerVar second) {
-			valuesDiff = new HashMap<String, Integer>();
-			for(Map.Entry<String, AbstractDomain> entry : second.values.entrySet()){
-				String varName = entry.getKey();
-				AbstractDomain secondDomain = entry.getValue();
-				AbstractDomain firstDomain = first.values.get(varName);
-				if(firstDomain != null && secondDomain != null){
-					this.valuesDiff.put(varName,firstDomain.diff(secondDomain));
-				}
+	public static HashMap<String, Integer> diff(IntervalPerVar first, IntervalPerVar second){
+		HashMap<String, Integer> valuesDiff = new HashMap<String, Integer>();
+		for(Map.Entry<String, AbstractDomain> entry : second.values.entrySet()){
+			String varName = entry.getKey();
+			AbstractDomain secondDomain = entry.getValue();
+			AbstractDomain firstDomain = first.values.get(varName);
+			if(firstDomain != null && secondDomain != null){
+				valuesDiff.put(varName,firstDomain.diff(secondDomain));
 			}
 		}
-
+		return valuesDiff;
 	}
 	
 	private HashMap<String, AbstractDomain> values;

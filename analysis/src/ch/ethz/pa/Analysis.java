@@ -2,7 +2,9 @@ package ch.ethz.pa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import soot.Unit;
 import soot.jimple.Stmt;
@@ -10,6 +12,7 @@ import soot.jimple.toolkits.annotation.logic.Loop;
 import soot.toolkits.graph.LoopNestTree;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
+import ch.ethz.pa.domain.AbstractDomain;
 
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
@@ -22,12 +25,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		IntervalPerVar backJumpStmtValues = new IntervalPerVar(); //values at the end of the loop
 		
 		// we will apply widening as soon as any of these reach WIDENING_ITERATIONS changes in the same direction.
-		
-	}
-	
-	private void updateVarChanges(LoopAnnotation annotation){
-		//compare headStmtValues with backJumpStmtValues
-		
+		List<HashMap<String, Integer>> diffList = new LinkedList<HashMap<String, Integer>>();
 	}
 	
 	ObjectSetPerVar aliases;
@@ -72,7 +70,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
 			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
-			Stmt loopBackJump = currentInner.getBackJumpStmt(); //the last statement in the loop, not necessarily the goto
 			if(s.equals(loopHead)){
 				//we are at the head entering a loop, update count and reset all widenings of nested loops
 				if(wideningInformation.get(currentInner) == null){
@@ -95,13 +92,56 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
-			Stmt loopHead = currentInner.getHead();
-			Stmt loopBackJump = currentInner.getBackJumpStmt();
+			Stmt loopBackJump = currentInner.getBackJumpStmt();  //the last statement in the loop, not necessarily the goto
 			if(s.equals(loopBackJump)){
 				//this was the last instruction in the loop, after this comes the merge() operation
 				//need to create a diff between head and backJump
 				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
 				currentAnnotation.backJumpStmtValues = branchState; // as we want the state as changed by the loop body
+				
+				HashMap<String, Integer> currentDiff = IntervalPerVar.diff(currentAnnotation.headStmtValues, currentAnnotation.backJumpStmtValues);
+				currentAnnotation.diffList.add(currentDiff);
+				if(currentAnnotation.diffList.size() > WIDENING_ITERATIONS){
+					currentAnnotation.diffList.remove(0); //remove first item
+				}
+				
+				//now check if we have had any variable in the diffList that went in the same direction the last WIDENING_ITERATIONS times
+				
+				boolean wideningNecessary = false;
+				
+				HashMap<String, Integer> diffCounts = new HashMap<String, Integer>();
+				
+				HashMap<String, Integer> prevDiff = null;
+				for(HashMap<String, Integer> diff : currentAnnotation.diffList){
+					for(Entry<String, Integer> entry : diff.entrySet()){
+						String varName = entry.getKey();
+						Integer direction = entry.getValue();
+						
+						if(!diffCounts.containsKey(varName)){
+							diffCounts.put(varName, 1);
+						}
+						int count = diffCounts.get(varName);
+						if(prevDiff != null && prevDiff.get(varName) != null && prevDiff.get(varName).equals(direction)){
+							count++;
+							diffCounts.put(varName, count); //this variable went in the same direction as previously
+							if(count >= WIDENING_ITERATIONS){
+								wideningNecessary = true;
+							}
+						}
+					}
+					prevDiff = diff;
+				}
+				if(wideningNecessary){
+					System.err.println("Doing widening.");
+					//if we find one, widen all the variables currently in the diffList, regardless of count
+					for(Entry<String, Integer> diff : currentDiff.entrySet()){
+						String varName = diff.getKey();
+						Integer direction = diff.getValue();
+						AbstractDomain interval = branchState.getIntervalForVar(varName);
+						branchState.putIntervalForVar(varName, interval.widen(direction));
+					}
+					currentAnnotation.widened = true;
+				}
 				
 			}
 		}
