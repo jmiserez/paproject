@@ -14,6 +14,11 @@ class Interval extends AbstractDomain {
 	private final static Interval TOP = new Interval(-MIN_INF, MAX_INF);
 	private final static Interval BOT = new Interval();
 	
+	private final static int DIFF_LOWER_DECREASING = 1 << 0;
+	private final static int DIFF_LOWER_INCREASING = 1 << 1;
+	private final static int DIFF_UPPER_DECREASING = 1 << 2;
+	private final static int DIFF_UPPER_INCREASING = 1 << 3;
+	
 	protected int lower, upper;
 	protected boolean bot = false;
 	
@@ -350,6 +355,43 @@ class Interval extends AbstractDomain {
 	@Override
 	public boolean isBot() {
 		return lower == Interval.BOT.lower && upper == Interval.BOT.upper && bot == true;
+	}
+	
+	@Override
+	public int diff(AbstractDomain a) {
+		int directionality = 0;
+		Interval i = (Interval) a;
+		if(i.lower < this.lower){
+			directionality |= DIFF_LOWER_DECREASING;
+		}
+		if(i.lower > this.lower){
+			directionality |= DIFF_LOWER_INCREASING;
+		}
+		if(i.upper < this.upper){
+			directionality |= DIFF_UPPER_DECREASING;
+		}
+		if(i.upper > this.upper){
+			directionality |= DIFF_UPPER_INCREASING;
+		}
+		return directionality;
+	}
+	
+	@Override
+	public AbstractDomain widen(int directionality) {
+		Interval result = (Interval) this.copy();
+		if((directionality & DIFF_LOWER_DECREASING) != 0){
+			result.lower = MIN_INF;
+		}
+		if((directionality & DIFF_LOWER_INCREASING) != 0){
+			result.lower = MAX_INF;
+		}
+		if((directionality & DIFF_UPPER_DECREASING) != 0){
+			result.upper = MIN_INF;
+		}
+		if((directionality & DIFF_UPPER_INCREASING) != 0){
+			result.upper = MAX_INF;
+		}
+		return result;
 	}
 
 }

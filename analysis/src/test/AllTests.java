@@ -87,6 +87,20 @@ public class AllTests {
 	}
 	
 	@Test
+	public void testOverflowTest() {
+		String result = verify("OverflowTest");
+		// program is UNSAFE due to overflow
+		assertEquals(result,  "Program is UNSAFE\n");
+	}
+	
+	@Test
+	public void testWideningTest() {
+		String result = verify("WideningTest");
+		//program is SAFE, but widening will say UNSAFE if < 1000 iterations (which is sound, but not precise)
+		assertEquals(result,  "Program is SAFE\n");
+	}
+	
+	@Test
 	public void testNotTest() {
 		String result = verify("NotTest");
 		assertEquals(result,  "Program is UNSAFE\n");

@@ -3,7 +3,6 @@ package ch.ethz.pa;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.TreeMap;
 
 import soot.Unit;
 import soot.jimple.Stmt;
@@ -16,11 +15,24 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
 	private final static int WIDENING_ITERATIONS = 5;
 	
+	private class LoopAnnotation {
+		int headCount = 0;
+		boolean widened = false;
+		IntervalPerVar headStmtValues = new IntervalPerVar(); //values at the start of the loop
+		IntervalPerVar backJumpStmtValues = new IntervalPerVar(); //values at the end of the loop
+		
+		// we will apply widening as soon as any of these reach WIDENING_ITERATIONS changes in the same direction.
+		
+	}
+	
+	private void updateVarChanges(LoopAnnotation annotation){
+		//compare headStmtValues with backJumpStmtValues
+		
+	}
+	
 	ObjectSetPerVar aliases;
 	LoopNestTree loops;
-	TreeMap<Loop,Integer> loopCounts = new TreeMap<Loop, Integer>();
-	List<Loop> widenedLoops = new ArrayList<Loop>();
-	HashMap<String, Integer> loopChanges = new HashMap<String,Integer>();
+	HashMap<Loop,LoopAnnotation> wideningInformation = new HashMap<Loop, LoopAnnotation>();
 	
 	public Analysis(UnitGraph g, ObjectSetPerVar aliases, LoopNestTree loops) {
 		super(g);
@@ -30,10 +42,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	}
 	
 	void run() {
-		//TODO reenable next line
-		loopCounts.clear();
-		widenedLoops.clear();
-		loopChanges.clear();
+		wideningInformation.clear();
 		doAnalysis();
 	}
 	
@@ -45,8 +54,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	@Override
 	protected void flowThrough(IntervalPerVar current, Unit op, List<IntervalPerVar> fallOut,
 			List<IntervalPerVar> branchOuts) {
-		// TODO: This can be optimized.
-	
 		Stmt s = (Stmt)op;
 		IntervalPerVar fallState = new IntervalPerVar();
 		fallState.copyFrom(current);
@@ -60,40 +67,43 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 				currentLoops.add(l);
 			}
 		}
-		//currentLoops.size() is the current nesting depth
-		
 		System.out.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
-			Stmt loopHead = currentInner.getHead();
+			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
+			Stmt loopBackJump = currentInner.getBackJumpStmt(); //the last statement in the loop, not necessarily the goto
 			if(s.equals(loopHead)){
-				//we are at the head, update count
-				int loopCount = 0;
-				if(loopCounts.containsKey(currentInner)){
-					loopCount = loopCounts.get(currentInner);
-					loopCounts.put(currentInner, loopCount++);
-				} else {
-					//first time we enter this loop, we must be at loopHead
-					if(!loopHead.equals(s)){
-						System.err.println("Warning: did not enter loop through loop head!");
-					}
-					loopCounts.put(currentLoops.get(0), 1);
+				//we are at the head entering a loop, update count and reset all widenings of nested loops
+				if(wideningInformation.get(currentInner) == null){
+					wideningInformation.put(currentInner, new LoopAnnotation());
 				}
+				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
+				currentAnnotation.headCount++;
+				currentAnnotation.headStmtValues = current.copy();
 				
+				// all loops < currentInner are nested deeper inside this loop
+				for(Loop deeperLoop : loops.headSet(currentInner, false)){
+					if(wideningInformation.containsKey(deeperLoop)){
+						wideningInformation.put(deeperLoop, new LoopAnnotation()); //completely reset deeper loops
+					}
+				}
 			}
-			
 		}
 		
-		boolean skip = false;
-		for(Loop l : currentLoops){
-			if(widenedLoops.contains(l)){
-				skip = true;
-				break;
+		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
+		
+		if(currentLoops.size() > 0){
+			Loop currentInner = currentLoops.get(0);
+			Stmt loopHead = currentInner.getHead();
+			Stmt loopBackJump = currentInner.getBackJumpStmt();
+			if(s.equals(loopBackJump)){
+				//this was the last instruction in the loop, after this comes the merge() operation
+				//need to create a diff between head and backJump
+				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
+				currentAnnotation.backJumpStmtValues = branchState; // as we want the state as changed by the loop body
+				
 			}
-		}
-		if(!skip){
-			s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
 		}
 		
 		// TODO: Maybe avoid copying objects too much. Feel free to optimize.
@@ -123,10 +133,12 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		return new IntervalPerVar();
 	}
 
+	
 	@Override
 	protected void merge(IntervalPerVar src1, IntervalPerVar src2, IntervalPerVar trg) {
 		// TODO: join, widening, etc goes here.
 		IntervalPerVar.join(src1, src2, trg);
+		
 		System.out.printf("Merge:\n    %s\n    %s\n    ============\n    %s\n",
 				src1.toString(), src2.toString(), trg.toString());
 	}

@@ -331,9 +331,9 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		for (int i = 0; i <= 15; i++){
 			if(SENSOR_ID_INTERVALS[i].contains(sensorIdInterval)){
 				for(Tag t : mayObjects){
-					int count = m.getAdjustValueCountForVar(t.toString(), i); //TODO: change defaultObj to pointer analysis
+					int count = m.getReadSensorCountForVar(t.toString(), i);
 					count++;
-					m.putAdjustValueCountForVar(t.toString(), i, count); //TODO: change defaultObj to pointer analysis
+					m.putReadSensorCountForVar(t.toString(), i, count);
 					if(count > 1){
 						throw new ProgramIsUnsafeException("readSensor for object "+ t.toString() +" was called more than once");
 					}

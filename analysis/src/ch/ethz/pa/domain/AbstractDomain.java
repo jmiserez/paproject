@@ -38,6 +38,17 @@ public abstract class AbstractDomain {
 	public abstract AbstractDomain getBot();
 	public abstract boolean isTop();
 	public abstract boolean isBot();
+	
+	/**
+	 * In which direction is other heading relative to this
+	 */
+	public abstract int diff(AbstractDomain other);
+	
+	/**
+	 * Widen according to directionality
+	 */
+	public abstract AbstractDomain widen(int directionality);
+	
 
 	static public abstract class PairSwitch extends AbstractJimpleValueSwitch {
 		public Pair<AbstractDomain, AbstractDomain> fallOut;

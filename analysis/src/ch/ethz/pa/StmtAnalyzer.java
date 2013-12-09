@@ -5,6 +5,7 @@ import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.GotoStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
