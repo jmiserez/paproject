@@ -18,16 +18,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
 	private final static int WIDENING_ITERATIONS = 5;
 	
-	private class LoopAnnotation {
-		int headCount = 0;
-		boolean widened = false;
-		IntervalPerVar headStmtValues = new IntervalPerVar(); //values at the start of the loop
-		IntervalPerVar backJumpStmtValues = new IntervalPerVar(); //values at the end of the loop
-		
-		// we will apply widening as soon as any of these reach WIDENING_ITERATIONS changes in the same direction.
-		List<HashMap<String, Integer>> diffList = new LinkedList<HashMap<String, Integer>>();
-	}
-	
 	ObjectSetPerVar aliases;
 	LoopNestTree loops;
 	HashMap<Loop,LoopAnnotation> wideningInformation = new HashMap<Loop, LoopAnnotation>();
