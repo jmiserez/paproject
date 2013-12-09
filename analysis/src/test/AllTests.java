@@ -1,6 +1,6 @@
 package test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -11,17 +11,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import test.util.CloneOutputStream;
+import ch.ethz.pa.Analysis;
 import ch.ethz.pa.Verifier;
 
 public class AllTests {
-	 
+	
+	private static final int DEFAULT_WIDENING_ITERATIONS = Analysis.WIDENING_ITERATIONS;
+	
 	@BeforeClass
     public static void setupOnce() {
+		
     }
 
     @Before
     public void setup() {
-    	
+    	Analysis.WIDENING_ITERATIONS = DEFAULT_WIDENING_ITERATIONS;
     }
 
     @After
@@ -95,8 +99,12 @@ public class AllTests {
 	
 	@Test
 	public void testWideningTest() {
+		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
+		Analysis.WIDENING_ITERATIONS = 5;
 		String result = verify("WideningTest");
-		//program is SAFE, but widening will say UNSAFE if < 1000 iterations (which is sound, but not precise)
+		assertEquals("Program is UNSAFE\n", result);
+		Analysis.WIDENING_ITERATIONS = 501;
+		result = verify("WideningTest");
 		assertEquals("Program is SAFE\n", result);
 	}
 	
@@ -118,5 +126,5 @@ public class AllTests {
     	String captured = myOut.toString();
     	return captured;
 	}
-
+	
 }

@@ -2,7 +2,6 @@ package ch.ethz.pa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -16,7 +15,7 @@ import ch.ethz.pa.domain.AbstractDomain;
 
 public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	
-	private final static int WIDENING_ITERATIONS = 5;
+	public static int WIDENING_ITERATIONS = 5;
 	
 	ObjectSetPerVar aliases;
 	LoopNestTree loops;
@@ -30,6 +29,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 	}
 	
 	void run() {
+		System.err.println("WIDENING_ITERATIONS = "+WIDENING_ITERATIONS);
 		wideningInformation.clear();
 		doAnalysis();
 	}
