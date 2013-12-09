@@ -8,6 +8,22 @@ import ch.ethz.pa.util.PaUtils;
 
 public class IntervalPerVar {
 	
+	public static HashMap<String, Integer> diff(IntervalPerVar first, IntervalPerVar second){
+		HashMap<String, Integer> valuesDiff = new HashMap<String, Integer>();
+		for(Map.Entry<String, AbstractDomain> entry : second.values.entrySet()){
+			String varName = entry.getKey();
+			AbstractDomain secondDomain = entry.getValue();
+			AbstractDomain firstDomain = first.values.get(varName);
+			if(firstDomain != null && secondDomain != null){
+				int diff = firstDomain.diff(secondDomain);
+				if (diff != 0){
+					valuesDiff.put(varName,diff);
+				}
+			}
+		}
+		return valuesDiff;
+	}
+	
 	private HashMap<String, AbstractDomain> values;
 	private HashMap<String, HashMap<Integer, Integer>> adjustValueCount;
 	private HashMap<String, HashMap<Integer, Integer>> readSensorCount;

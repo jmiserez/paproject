@@ -43,7 +43,7 @@ public class PointsToStmtAnalyzer extends AbstractStmtSwitch {
 		LineNumberTag lnt = (LineNumberTag) stmt.getTag("PaLineNumber");
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
-		System.out.println("Line " + lnt.getLineNumber() + ": " + lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
+		System.err.println("Line " + lnt.getLineNumber() + ": " + lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
 		HashSet<Tag> rvar = new HashSet<Tag>();
 		if (lval instanceof JimpleLocal) {
 			JimpleLocal llocal = ((JimpleLocal)lval);

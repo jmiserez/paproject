@@ -14,7 +14,7 @@ public class LineNumberAnalysis extends ForwardFlowAnalysis<Unit, HashMap<Stmt,I
 	
 	public LineNumberAnalysis(DirectedGraph<Unit> g) {
 		super(g);
-		System.out.println(g.toString());
+		System.err.println(g.toString());
 	}
 	
 	HashMap<Stmt,Integer> run() {
@@ -28,7 +28,7 @@ public class LineNumberAnalysis extends ForwardFlowAnalysis<Unit, HashMap<Stmt,I
 		copy(in, out);
 		s.addTag(new PaLineNumberTag(lineNumber++));
 		PaLineNumberTag tag = (PaLineNumberTag) s.getTag("PaLineNumber");
-		System.out.println(tag.getLineNumber() + ": " + op);
+		System.err.println(tag.getLineNumber() + ": " + op);
 		out.put(s, tag.getLineNumber());
 	}
 

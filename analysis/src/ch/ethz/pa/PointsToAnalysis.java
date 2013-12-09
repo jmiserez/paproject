@@ -17,7 +17,7 @@ public class PointsToAnalysis extends ForwardFlowAnalysis<Unit, ObjectSetPerVar>
 	
 	public PointsToAnalysis(DirectedGraph<Unit> g, LoopNestTree loops) {
 		super(g);
-		System.out.println(g.toString());
+		System.err.println(g.toString());
 		lastOut = null;
 //		this.loops = loops;
 	}
@@ -38,7 +38,7 @@ public class PointsToAnalysis extends ForwardFlowAnalysis<Unit, ObjectSetPerVar>
 
 		out.copyFrom(in);
 		s.apply(new PointsToStmtAnalyzer(in, out));
-		System.out.println("Operation (pointer analysis): " + op + "   - " + op.getClass().getName() + "\n      in: " + in
+		System.err.println("Operation (pointer analysis): " + op + "   - " + op.getClass().getName() + "\n      in: " + in
 				+ "\n      out: "+out);
 		lastOut = out;
 	}
@@ -58,7 +58,7 @@ public class PointsToAnalysis extends ForwardFlowAnalysis<Unit, ObjectSetPerVar>
 	protected void merge(ObjectSetPerVar src1, ObjectSetPerVar src2,
 			ObjectSetPerVar trg) {
 		ObjectSetPerVar.join(src1, src2, trg);
-		System.out.printf("Merge (pointer analysis):\n    %s\n    %s\n    ============\n    %s\n",
+		System.err.printf("Merge (pointer analysis):\n    %s\n    %s\n    ============\n    %s\n",
 				src1.toString(), src2.toString(), trg.toString());
 	}
 

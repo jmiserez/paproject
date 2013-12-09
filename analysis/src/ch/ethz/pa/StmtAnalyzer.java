@@ -5,6 +5,7 @@ import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.AssignStmt;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.GotoStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeExpr;
@@ -47,7 +48,7 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 	private void handleAssign(DefinitionStmt stmt) {
 		Value lval = stmt.getLeftOp();
 		Value rval = stmt.getRightOp();
-		System.out.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
+		System.err.println(lval.getClass().getName() +" ("+lval.getType()+")" + " <- " + rval.getClass().getName());
 		AbstractDomain rvar = new Domain();
 		if (lval instanceof JimpleLocal) {
 			JimpleLocal llocal = ((JimpleLocal)lval);
@@ -71,7 +72,9 @@ public class StmtAnalyzer extends AbstractStmtSwitch {
 
 	@Override
 	public void defaultCase(Object obj) {
+		System.out.flush();
 		System.err.println("Warning: StmtAnalyzer.defaultCase called for: "+obj);
+		System.err.flush();
 		//TODO: Set everything to TOP
 	}
 
