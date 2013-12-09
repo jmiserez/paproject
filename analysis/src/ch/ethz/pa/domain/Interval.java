@@ -196,7 +196,7 @@ class Interval extends AbstractDomain {
 	}
 
 	public AbstractDomain or(AbstractDomain a) {
-		return TOP;
+		return TOP.copy();
 //		Interval i = (Interval) a;
 //
 //		List<Integer> newBounds = new ArrayList<Integer>();

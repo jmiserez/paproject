@@ -124,7 +124,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 
 	@Override
 	public void caseMulExpr(MulExpr v) {
-		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
+		result.copyFrom(valueToInterval(v.getOp1()).multiply(valueToInterval(v.getOp2())));
 	}
 	
 	@Override
@@ -134,7 +134,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 
 	@Override
 	public void caseSubExpr(SubExpr v) {
-		result.copyFrom(valueToInterval(v.getOp1()).multiply(valueToInterval(v.getOp2())));
+		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
 	}
 
 	@Override
