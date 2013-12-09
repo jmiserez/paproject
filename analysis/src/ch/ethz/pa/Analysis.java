@@ -67,15 +67,22 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		}
 		System.out.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
+		boolean skip = false;
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
+			if(wideningInformation.get(currentInner) == null){
+				wideningInformation.put(currentInner, new LoopAnnotation());
+			}
+			LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
+			if(currentAnnotation.widened){
+				//do not process 
+				skip = true;
+			}
+			
 			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
 			if(s.equals(loopHead)){
+				System.out.println("Entering loop");
 				//we are at the head entering a loop, update count and reset all widenings of nested loops
-				if(wideningInformation.get(currentInner) == null){
-					wideningInformation.put(currentInner, new LoopAnnotation());
-				}
-				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
 				currentAnnotation.headCount++;
 				currentAnnotation.headStmtValues = current.copy();
 				
@@ -88,16 +95,19 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			}
 		}
 		
-		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
+		if(!skip){
+			s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
+		}
 		
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
 			Stmt loopBackJump = currentInner.getBackJumpStmt();  //the last statement in the loop, not necessarily the goto
 			if(s.equals(loopBackJump)){
+				System.out.println("Last statement of loop");
 				//this was the last instruction in the loop, after this comes the merge() operation
 				//need to create a diff between head and backJump
 				LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
-				currentAnnotation.backJumpStmtValues = branchState; // as we want the state as changed by the loop body
+				currentAnnotation.backJumpStmtValues = fallState; // as we want the state as changed by the loop body
 				
 				HashMap<String, Integer> currentDiff = IntervalPerVar.diff(currentAnnotation.headStmtValues, currentAnnotation.backJumpStmtValues);
 				currentAnnotation.diffList.add(currentDiff);
@@ -132,14 +142,18 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 					prevDiff = diff;
 				}
 				if(wideningNecessary){
-					System.err.println("Doing widening.");
+					System.out.println(
+							 "      fallState: " + fallState + "\n      branchState: " + branchState);
+					System.out.println("Doing widening.");
 					//if we find one, widen all the variables currently in the diffList, regardless of count
 					for(Entry<String, Integer> diff : currentDiff.entrySet()){
 						String varName = diff.getKey();
 						Integer direction = diff.getValue();
-						AbstractDomain interval = branchState.getIntervalForVar(varName);
-						branchState.putIntervalForVar(varName, interval.widen(direction));
+						AbstractDomain interval = fallState.getIntervalForVar(varName);
+						fallState.putIntervalForVar(varName, interval.widen(direction));
 					}
+					System.out.println(
+							 "      fallState: " + fallState + "\n      branchState: " + branchState);
 					currentAnnotation.widened = true;
 				}
 				

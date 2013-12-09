@@ -15,7 +15,10 @@ public class IntervalPerVar {
 			AbstractDomain secondDomain = entry.getValue();
 			AbstractDomain firstDomain = first.values.get(varName);
 			if(firstDomain != null && secondDomain != null){
-				valuesDiff.put(varName,firstDomain.diff(secondDomain));
+				int diff = firstDomain.diff(secondDomain);
+				if (diff != 0){
+					valuesDiff.put(varName,diff);
+				}
 			}
 		}
 		return valuesDiff;
