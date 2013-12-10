@@ -3,10 +3,12 @@ package ch.ethz.pa.domain;
 import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
-public class ModularInterval extends AbstractDomain {
+class ModularInterval extends AbstractDomain {
 	
 	/*
 	 * The interval between lower and upper is the intresting case. I.e. 5 is in [1,8] and not in [8,1].
+	 * 
+	 * NOTE: TOP is when lower = upper + 1 (mod N)
 	 */
 	protected long lower, upper;
 	protected boolean bot = false;
@@ -21,10 +23,25 @@ public class ModularInterval extends AbstractDomain {
 	public ModularInterval(int start_value) {
 		lower = upper = start_value;
 	}
-	
+
 	public ModularInterval(int l, int u) {
 		lower = l;
 		upper = u;
+	}
+	
+	private ModularInterval(long l, long u) {
+		lower = l;
+		upper = u;
+	}
+	
+	@Override
+	public String toString() {
+		if (this.equals(BOT)) {
+			return "[BOT]";
+		} else if (this.equals(TOP)) {
+			return "[TOP]";
+		}
+		return String.format("[%d,%d]", lower, upper);
 	}
 
 	@Override
@@ -47,11 +64,13 @@ public class ModularInterval extends AbstractDomain {
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof ModularInterval)) return false;
-		Interval i = (Interval)o;
+		ModularInterval i = (ModularInterval)o;
 		if (this.isBot() && i.isBot())
 			return true;
 		if (this.isBot() || i.isBot())
 			return false;
+		if (this.isTop() && i.isTop())
+			return true;
 		return lower == i.lower && upper == i.upper;
 	}
 	
@@ -72,6 +91,11 @@ public class ModularInterval extends AbstractDomain {
 			return i.copy();
 		if (i.equals(BOT))
 			return this.copy();
+		if (this.upper >= this.lower) {
+			if (i.upper >= i.lower) {
+				return new ModularInterval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper));
+			}
+		}
 		// TODO Auto-generated method stub
 		return ModularInterval.TOP.copy();
 	}
@@ -83,10 +107,31 @@ public class ModularInterval extends AbstractDomain {
 			return BOT.copy();
 		if (i.equals(BOT))
 			return BOT.copy();
-		if (this.lower > i.upper && i.lower > this.upper)
-			return BOT.copy();
-		// TODO Auto-generated method stub
-		return ModularInterval.BOT.copy();
+		if (this.upper >= this.lower) {
+			if (i.upper >= i.lower) {
+				// "Regular" case from Interval class
+				if (this.upper < i.lower || this.lower > i.upper)
+					return BOT.copy();
+				return new ModularInterval((int) Math.max(this.lower, i.lower), (int) Math.min(this.upper, i.upper));
+			} else {
+				ModularInterval i1 = new ModularInterval();
+				ModularInterval i2 = new ModularInterval();
+				if (this.lower <= i.upper)
+					i1 = new ModularInterval(this.lower, i.upper);
+				if (this.upper > i.lower)
+					i2 = new ModularInterval(i.lower, this.upper);
+				if (i1.size() > i2.size())
+					return i1;
+				else
+					return i2;
+			}
+		} else {
+			if (i.upper > i.lower) {
+				return i.meet(this);
+			} else {
+				return new ModularInterval((int) Math.min(this.upper, i.upper), (int) Math.max(this.lower, i.lower));
+			}
+		}
 	}
 
 	@Override
