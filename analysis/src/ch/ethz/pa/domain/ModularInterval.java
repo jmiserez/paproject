@@ -3,14 +3,14 @@ package ch.ethz.pa.domain;
 import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
-class ModularInterval extends AbstractDomain {
+class ModularInterval extends Interval {
 	
 	/*
-	 * The interval between lower and upper is the intresting case. I.e. 5 is in [1,8] and not in [8,1].
+	 * This is designed according to the Bit-field paper by the 
+	 * Abstract Domains for Bit-Level Machine Integer and Floating-point Operations paper by Miné
 	 * 
-	 * NOTE: TOP is when lower = upper + 1 (mod N)
 	 */
-	protected long lower, upper;
+	protected long l, h, k;
 	protected boolean bot = false;
 	
 	private final static ModularInterval TOP = new ModularInterval(Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -20,18 +20,19 @@ class ModularInterval extends AbstractDomain {
 		bot = true;
 	}
 	
-	public ModularInterval(int start_value) {
-		lower = upper = start_value;
+	public ModularInterval(int const_val) {
+		l = h = const_val;
 	}
 
-	public ModularInterval(int l, int u) {
-		lower = l;
-		upper = u;
+	public ModularInterval(int l, int h) {
+		this.l = l;
+		this.h = h;
 	}
 	
-	private ModularInterval(long l, long u) {
-		lower = l;
-		upper = u;
+	private ModularInterval(long l, long h, long k) {
+		this.l = l;
+		this.h = h;
+		this.k = k;
 	}
 	
 	@Override
@@ -41,14 +42,14 @@ class ModularInterval extends AbstractDomain {
 		} else if (this.equals(TOP)) {
 			return "[TOP]";
 		}
-		return String.format("[%d,%d]", lower, upper);
+		return String.format("[%d,%d]", l, h);
 	}
 
 	@Override
 	public void copyFrom(AbstractDomain other) {
 		ModularInterval i = (ModularInterval) other;
-		lower = i.lower;
-		upper = i.upper;
+		l = i.l;
+		h = i.h;
 		bot = i.bot;
 	}
 
@@ -58,8 +59,6 @@ class ModularInterval extends AbstractDomain {
 		i.copyFrom(this);
 		return i;
 	}
-	
-	
 
 	@Override
 	public boolean equals(Object o) {
@@ -71,17 +70,11 @@ class ModularInterval extends AbstractDomain {
 			return false;
 		if (this.isTop() && i.isTop())
 			return true;
-		return lower == i.lower && upper == i.upper;
+		return l == i.l && h == i.h;
 	}
 	
-	private long size() {
-		if (this.isBot()) {
-			return 0;
-		} else if (lower < upper) {
-			return upper - lower;
-		} else {
-			return lower - upper;
-		}
+	private static long gcd(long k2, long k3) {
+		return k3==0 ? k2 : gcd(k3,k2 % k3);
 	}
 
 	@Override
@@ -91,13 +84,7 @@ class ModularInterval extends AbstractDomain {
 			return i.copy();
 		if (i.equals(BOT))
 			return this.copy();
-		if (this.upper >= this.lower) {
-			if (i.upper >= i.lower) {
-				return new ModularInterval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper));
-			}
-		}
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		return new ModularInterval(Math.min(this.l, i.l), Math.max(this.h, i.h), gcd(this.k, i.k));
 	}
 
 	@Override
@@ -107,31 +94,9 @@ class ModularInterval extends AbstractDomain {
 			return BOT.copy();
 		if (i.equals(BOT))
 			return BOT.copy();
-		if (this.upper >= this.lower) {
-			if (i.upper >= i.lower) {
-				// "Regular" case from Interval class
-				if (this.upper < i.lower || this.lower > i.upper)
-					return BOT.copy();
-				return new ModularInterval((int) Math.max(this.lower, i.lower), (int) Math.min(this.upper, i.upper));
-			} else {
-				ModularInterval i1 = new ModularInterval();
-				ModularInterval i2 = new ModularInterval();
-				if (this.lower <= i.upper)
-					i1 = new ModularInterval(this.lower, i.upper);
-				if (this.upper > i.lower)
-					i2 = new ModularInterval(i.lower, this.upper);
-				if (i1.size() > i2.size())
-					return i1;
-				else
-					return i2;
-			}
-		} else {
-			if (i.upper > i.lower) {
-				return i.meet(this);
-			} else {
-				return new ModularInterval((int) Math.min(this.upper, i.upper), (int) Math.max(this.lower, i.lower));
-			}
-		}
+		if (this.l > i.h || i.l > this.h)
+			return BOT.copy();
+		return new ModularInterval((int) Math.max(this.l, i.l), (int) Math.min(this.h, i.h), gcd(this.k, i.k));
 	}
 
 	@Override
@@ -146,12 +111,12 @@ class ModularInterval extends AbstractDomain {
 
 	@Override
 	public boolean isTop() {
-		return lower == ModularInterval.TOP.lower && upper == ModularInterval.TOP.upper;
+		return l == ModularInterval.TOP.l && h == ModularInterval.TOP.h;
 	}
 
 	@Override
 	public boolean isBot() {
-		return lower == ModularInterval.BOT.lower && upper == ModularInterval.BOT.upper && bot == true;
+		return l == ModularInterval.BOT.l && h == ModularInterval.BOT.h && bot == true;
 	}
 
 	@Override
@@ -170,74 +135,87 @@ class ModularInterval extends AbstractDomain {
 
 	@Override
 	public AbstractDomain plus(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		return super.plus(other);
 	}
 
 	@Override
 	public AbstractDomain minus(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		return super.minus(other);
 	}
 
 	@Override
 	public AbstractDomain multiply(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		return super.multiply(other);
 	}
 
 	@Override
 	public AbstractDomain divide(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		return super.divide(other);
 	}
 
 	@Override
 	public AbstractDomain and(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.and(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain or(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.or(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain xor(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.xor(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain neg() {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		return super.neg();
 	}
 
 	@Override
 	public AbstractDomain shl(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.shl(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain shr(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.shr(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain ushr(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.ushr(other);
+		return TOP.copy();
 	}
 
 	@Override
 	public AbstractDomain rem(AbstractDomain other) {
-		// TODO Auto-generated method stub
-		return ModularInterval.TOP.copy();
+		ModularInterval i = (ModularInterval) other;
+		if (this.k == 0 &&  i.k == 0)
+			return super.rem(other);
+		return TOP.copy();
 	}
 	
 	// ---- PAIRS ----
