@@ -6,7 +6,7 @@ public class WideningTest2 {
 		int pressure = 0;
 		int parameter = 1;
 		
-		while(pressure < 20){
+		while(parameter < 20){
 			pressure += parameter++;
 		}
 		
