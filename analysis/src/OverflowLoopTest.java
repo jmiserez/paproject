@@ -5,13 +5,60 @@ public class OverflowLoopTest {
 		AircraftControl ac = new AircraftControl();
 		int sensorId = 15;
 		
-		for (int i = 0; i < 30; i++) {
-			sensorId += 2147483647;
-		}
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
+		sensorId += 2147483640; 
+		sensorId += 2147483640;
+		sensorId += 15;
 		
-		System.out.println(sensorId);
+		//adding this makes the program UNSAFE
+//		sensorId += 2147483640; 
+//		sensorId += 2147483640;
+//		sensorId += 15;
 		
-		ac.readSensor(sensorId); //UNSAFE. Even with widening, this should not print SAFE. Wraparound should never happen after widening.
+//		System.out.println(sensorId);
+		
+		ac.readSensor(sensorId); //SAFE
 	}
 
 }

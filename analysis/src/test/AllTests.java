@@ -184,6 +184,13 @@ public class AllTests {
 		assertEquals("Program is UNSAFE\n", result);
 	}
 	
+	@Test
+	public void testOverflowLoopTest() {
+		Analysis.WIDENING_ITERATIONS = 1000;
+		String result = verify("OverflowLoopTest");
+		assertEquals("Program is SAFE\n", result);
+	}
+	
 	private String verify(String className){
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream myOut = new ByteArrayOutputStream();

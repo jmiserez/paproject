@@ -67,13 +67,15 @@ class Interval extends AbstractDomain {
 						i.lower += RANGE;
 						i.upper += RANGE;
 					}
+					return i;
 				} else if(i.lower > MAX_VALUE && i.upper > MAX_VALUE){
 					while(i.lower > MAX_VALUE){ //TODO: use modulo here instead of a loop
 						i.lower -= RANGE;
 						i.upper -= RANGE;
 					}
+					return i;
 				}
-				//this should never happen
+				//this happens if the interval crosses a boundary
 				return TOP.copy();
 			}
 			return TOP.copy();
