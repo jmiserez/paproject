@@ -13,7 +13,7 @@ import soot.toolkits.graph.LoopNestTree;
 
 public class Verifier {
 	
-	private static final boolean SUPPRESS_OUTPUT = false;
+	private static final boolean DEBUG = false;
 	
 	public static void main(String[] args) {
 		if (args.length != 1) {
@@ -28,7 +28,7 @@ public class Verifier {
 		PrintStream stdout = System.out;
 		PrintStream stderr = System.err;
 		
-		if(SUPPRESS_OUTPUT){
+		if(!DEBUG){
 			System.setOut(new PrintStream(new OutputStream() {
 				public void write(int b) throws IOException {}
 			}));
