@@ -9,9 +9,9 @@ import soot.toolkits.scalar.Pair;
 class Interval extends AbstractDomain {
 	
 	// TODO: Do you need to handle infinity or empty interval?
-	private final static int MIN_INF = Integer.MIN_VALUE; //TODO handle infinity better
-	private final static int MAX_INF =  Integer.MAX_VALUE; 
-	private final static Interval TOP = new Interval(-MIN_INF, MAX_INF);
+	private final static long MIN_VALUE = Integer.MIN_VALUE; //TODO handle infinity better
+	private final static long MAX_VALUE =  Integer.MAX_VALUE; 
+	private final static Interval TOP = new Interval(MIN_VALUE, MAX_VALUE);
 	private final static Interval BOT = new Interval();
 	
 	private final static int DIFF_LOWER_DECREASING = 1 << 0;
@@ -19,18 +19,18 @@ class Interval extends AbstractDomain {
 	private final static int DIFF_UPPER_DECREASING = 1 << 2;
 	private final static int DIFF_UPPER_INCREASING = 1 << 3;
 	
-	protected int lower, upper;
+	protected long lower, upper;
 	protected boolean bot = false;
 	
 	public Interval() {
 		bot = true;
 	}
 	
-	public Interval(int start_value) {
+	public Interval(long start_value) {
 		lower = upper = start_value;
 	}
 	
-	public Interval(int l, int u) {
+	public Interval(long l, long u) {
 		lower = l;
 		upper = u;
 	}
@@ -39,6 +39,9 @@ class Interval extends AbstractDomain {
 	public String toString() {
 		if (this.equals(BOT)) {
 			return "[BOT]";
+		}
+		if (this.equals(TOP)) {
+			return "[TOP]";
 		}
 		return String.format("[%d,%d]", lower, upper);
 	}
@@ -53,42 +56,51 @@ class Interval extends AbstractDomain {
 
 	private static AbstractDomain handleOverflow(Interval i) {
 		// TODO: Be more precise
-		if (i.lower < MIN_INF || i.upper > MAX_INF)
-			return TOP.copy();
-		else
+		if (i.lower < MIN_VALUE || i.upper > MAX_VALUE) {
+			return TOP.copy(); //TODO: do not necessarily need to go to TOP if we only do plus() and minus()
+		} else {
 			return i;
+		}
 	}
 
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Interval)) return false;
 		Interval i = (Interval)o;
-		if (this.isBot() && i.isBot())
+		if(isBot() && i.isBot()){
 			return true;
-		if (this.isBot() || i.isBot())
+		}
+		if(isBot() || i.isBot()){
 			return false;
+		}
 		return lower == i.lower && upper == i.upper;
 	}
 	
 	public AbstractDomain plus(AbstractDomain a) {
-		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 		// TODO: Handle overflow.
 		return handleOverflow(new Interval(this.lower + Math.min(i.lower, i.upper), this.upper + Math.max(i.lower, i.upper)));
 	}
 
 	public AbstractDomain minus(AbstractDomain a) {
-		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 		// TODO: Handle overflow. 
 		return handleOverflow(new Interval(this.lower - Math.max(i.lower, i.upper), this.upper - Math.min(i.lower, i.upper)));
 	}
 
 	public AbstractDomain multiply(AbstractDomain a) {
-		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 		// TODO: Handle overflow.
-		int newLower = this.lower * i.lower, 
+		long newLower = this.lower * i.lower, 
 			newUpper = this.upper * i.upper;
 		// To handle case [-1, 1] * [-1, 1]
 		if (this.lower < 0 && i.lower < 0 && (this.upper >= 0 || i.upper >= 0))
@@ -103,8 +115,8 @@ class Interval extends AbstractDomain {
 //		// Note: we do not check for division by 0
 //		// division by -1 can negate the number, otherwise the number can only get smaller
 //		Interval i = (Interval) a;
-//		int newLower;
-//		int newUpper;
+//		long newLower;
+//		long newUpper;
 //		if(i.lower < 0 && i.upper >= 0){
 //			//contains -1
 //			newLower = Math.min(Math.min(-this.lower, this.lower),Math.min(-this.upper, this.upper));
@@ -123,18 +135,21 @@ class Interval extends AbstractDomain {
 		// result is negative iff this is < 0 (sign of a has no influence)
 		// abs(result) is always smaller than a
 		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 
-		int maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
+		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
 		
-		int newUpper = maxAbsRemainder;
+		long newUpper = maxAbsRemainder;
 		if(this.upper < maxAbsRemainder){
 			newUpper = this.upper;
 		}
 
 		// negative remainders only happen for negative this
-		int thisMin = Math.min(0, Math.min(this.lower, this.upper));
+		long thisMin = Math.min(0, Math.min(this.lower, this.upper));
 			
-		int newLower = -maxAbsRemainder; //default case
+		long newLower = -maxAbsRemainder; //default case
 		if(thisMin < -maxAbsRemainder){
 			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
 		}
@@ -142,8 +157,11 @@ class Interval extends AbstractDomain {
 	}
 	
 	public AbstractDomain neg() {
-		int newLower = -this.lower;
-		int newUpper = -this.upper;
+		if(isTop()){
+			return TOP.copy();
+		}
+		long newLower = -this.lower;
+		long newUpper = -this.upper;
 		
 		//TODO: is this true even with overflow?
 		if(newUpper < newLower){
@@ -160,16 +178,16 @@ class Interval extends AbstractDomain {
 //		Interval i = (Interval) a;
 //		
 //		List<Integer> newBounds = new ArrayList<Integer>();
-//		int[] thisBounds = {this.lower, this.upper};
-//		int[] iBounds = {i.lower, i.upper};
+//		long[] thisBounds = {this.lower, this.upper};
+//		long[] iBounds = {i.lower, i.upper};
 //
 //		// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
 //		// 1: -/+ -> intersection = [0,0]
 //		// 2: +/- -> intersection = [0,0]
 //		// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
 //		
-//		for(int tBound : thisBounds){
-//			for(int iBound : iBounds){
+//		for(long tBound : thisBounds){
+//			for(long iBound : iBounds){
 //				if(tBound < 0 && iBound < 0){
 //					newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound))+1)) - 1));
 //					newBounds.add(-1);
@@ -200,16 +218,16 @@ class Interval extends AbstractDomain {
 //		Interval i = (Interval) a;
 //
 //		List<Integer> newBounds = new ArrayList<Integer>();
-//		int[] thisBounds = {this.lower, this.upper};
-//		int[] iBounds = {i.lower, i.upper};
+//		long[] thisBounds = {this.lower, this.upper};
+//		long[] iBounds = {i.lower, i.upper};
 //
 //		// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
 //		// 1: -/+ -> intersection = [0,0]
 //		// 2: +/- -> intersection = [0,0]
 //		// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
 //		
-//		for(int tBound : thisBounds){
-//			for(int iBound : iBounds){
+//		for(long tBound : thisBounds){
+//			for(long iBound : iBounds){
 //				if(tBound < 0 && iBound < 0){
 //					newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound)))+1) - 1));
 //					newBounds.add(-1);
@@ -258,7 +276,6 @@ class Interval extends AbstractDomain {
 	
 	@Override
 	public AbstractDomain join(AbstractDomain a) {
-		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		if (this.equals(BOT))
 			return i.copy();
@@ -269,7 +286,6 @@ class Interval extends AbstractDomain {
 	
 	@Override
 	public AbstractDomain meet(AbstractDomain a) {
-		// Cross fingers and hope a is instanceof Interval
 		Interval i = (Interval) a;
 		if (this.equals(BOT))
 			return BOT.copy();
@@ -290,8 +306,8 @@ class Interval extends AbstractDomain {
 	public static class PairSwitch extends AbstractDomain.PairSwitch {
 		Interval i1, i2;
 
-		private final static AbstractDomain pInf = new Interval(MIN_INF, MIN_INF); // -Infinity
-		private final static AbstractDomain mInf = new Interval(MAX_INF, MAX_INF); // +Infinity
+		private final static AbstractDomain pInf = new Interval(MIN_VALUE, MIN_VALUE); // -Infinity
+		private final static AbstractDomain mInf = new Interval(MAX_VALUE, MAX_VALUE); // +Infinity
 		private final static AbstractDomain one = new Interval(1, 1); // 1
 		
 		/* 
@@ -354,7 +370,7 @@ class Interval extends AbstractDomain {
 
 	@Override
 	public boolean isBot() {
-		return lower == Interval.BOT.lower && upper == Interval.BOT.upper && bot == true;
+		return lower == Interval.BOT.lower && upper == Interval.BOT.upper  && bot == true;
 	}
 	
 	@Override
@@ -379,19 +395,7 @@ class Interval extends AbstractDomain {
 	@Override
 	public AbstractDomain widen(int directionality) {
 		Interval result = (Interval) this.copy();
-		if((directionality & DIFF_LOWER_DECREASING) != 0){
-			result.lower = MIN_INF;
-		}
-		if((directionality & DIFF_LOWER_INCREASING) != 0){
-			result.lower = MAX_INF;
-		}
-		if((directionality & DIFF_UPPER_DECREASING) != 0){
-			result.upper = MIN_INF;
-		}
-		if((directionality & DIFF_UPPER_INCREASING) != 0){
-			result.upper = MAX_INF;
-		}
-		return result;
+		return TOP.copy();
 	}
 
 }

@@ -56,18 +56,12 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 		}
 		System.err.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
 		
-		boolean skip = false;
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
 			if(wideningInformation.get(currentInner) == null){
 				wideningInformation.put(currentInner, new LoopAnnotation());
 			}
 			LoopAnnotation currentAnnotation = wideningInformation.get(currentInner);
-			if(currentAnnotation.widened){
-				//do not process 
-				skip = true;
-			}
-			
 			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
 			if(s.equals(loopHead)){
 				System.err.println("Entering loop");
@@ -84,9 +78,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			}
 		}
 		
-		if(!skip){
-			s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
-		}
+		s.apply(new StmtAnalyzer(current, fallState, branchState, aliases));
 		
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
@@ -124,6 +116,17 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 							count++;
 							diffCounts.put(varName, count); //this variable went in the same direction as previously
 							if(count >= WIDENING_ITERATIONS){
+								System.err.println(
+										 "      fallState: " + fallState + "\n      branchState: " + branchState);
+								System.err.println("Doing widening for "+varName);
+								
+								AbstractDomain interval = fallState.getIntervalForVar(varName);
+								fallState.putIntervalForVar(varName, interval.widen(direction));
+								
+								diffCounts.put(varName, 0); //reset
+								
+								System.err.println(
+										 "      fallState: " + fallState + "\n      branchState: " + branchState);
 								wideningNecessary = true;
 							}
 						}
@@ -131,18 +134,6 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 					prevDiff = diff;
 				}
 				if(wideningNecessary){
-					System.err.println(
-							 "      fallState: " + fallState + "\n      branchState: " + branchState);
-					System.err.println("Doing widening.");
-					//if we find one, widen all the variables currently in the diffList, regardless of count
-					for(Entry<String, Integer> diff : currentDiff.entrySet()){
-						String varName = diff.getKey();
-						Integer direction = diff.getValue();
-						AbstractDomain interval = fallState.getIntervalForVar(varName);
-						fallState.putIntervalForVar(varName, interval.widen(direction));
-					}
-					System.err.println(
-							 "      fallState: " + fallState + "\n      branchState: " + branchState);
 					currentAnnotation.widened = true;
 				}
 				
