@@ -127,6 +127,17 @@ public class AllTests {
 	}
 	
 	@Test
+	public void testWideningTest3() {
+		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
+		Analysis.WIDENING_ITERATIONS = 5;
+		String result = verify("WideningTest3");
+		assertEquals("Program is UNSAFE\n", result);
+		Analysis.WIDENING_ITERATIONS = 1000;
+		result = verify("WideningTest3"); //no widening takes place here
+		assertEquals("Program is UNSAFE\n", result);
+	}
+	
+	@Test
 	public void testNotTest() {
 		String result = verify("NotTest");
 		assertEquals("Program is UNSAFE\n", result);
