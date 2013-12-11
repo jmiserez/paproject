@@ -9,8 +9,9 @@ import soot.toolkits.scalar.Pair;
 class Interval extends AbstractDomain {
 	
 	// TODO: Do you need to handle infinity or empty interval?
-	private final static long MIN_VALUE = Integer.MIN_VALUE; //TODO handle infinity better
+	private final static long MIN_VALUE = Integer.MIN_VALUE;
 	private final static long MAX_VALUE =  Integer.MAX_VALUE; 
+	private final static long RANGE =  MAX_VALUE - MIN_VALUE + 1;
 	private final static Interval TOP = new Interval(MIN_VALUE, MAX_VALUE);
 	private final static Interval BOT = new Interval();
 	
@@ -55,9 +56,27 @@ class Interval extends AbstractDomain {
 	}
 
 	private static AbstractDomain handleOverflow(Interval i) {
-		// TODO: Be more precise
+		if (i.lower > i.upper){
+			return TOP.copy();
+		}
 		if (i.lower < MIN_VALUE || i.upper > MAX_VALUE) {
-			return TOP.copy(); //TODO: do not necessarily need to go to TOP if we only do plus() and minus()
+			long length = i.upper - i.lower;
+			if(length <= RANGE && length >= 0){
+				if(i.lower < MIN_VALUE && i.upper < MIN_VALUE){
+					while(i.lower < MIN_VALUE){ //TODO: use modulo here instead of a loop
+						i.lower += RANGE;
+						i.upper += RANGE;
+					}
+				} else if(i.lower > MAX_VALUE && i.upper > MAX_VALUE){
+					while(i.lower > MAX_VALUE){ //TODO: use modulo here instead of a loop
+						i.lower -= RANGE;
+						i.upper -= RANGE;
+					}
+				}
+				//this should never happen
+				return TOP.copy();
+			}
+			return TOP.copy();
 		} else {
 			return i;
 		}
@@ -81,7 +100,6 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		// TODO: Handle overflow.
 		return handleOverflow(new Interval(this.lower + Math.min(i.lower, i.upper), this.upper + Math.max(i.lower, i.upper)));
 	}
 
@@ -90,7 +108,6 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		// TODO: Handle overflow. 
 		return handleOverflow(new Interval(this.lower - Math.max(i.lower, i.upper), this.upper - Math.min(i.lower, i.upper)));
 	}
 
