@@ -97,6 +97,36 @@ public class AllTests {
 	}
 	
 	@Test
+	public void TestSimpleGen1_224_at_testL_OK_0() {
+		String result = verify("TestSimpleGen1_224_at_testL_OK_0");
+		assertEquals(result, "Program is SAFE\n", result);
+	}
+	
+	@Test
+	public void TestSimpleGen11_376_at_testM_OK_4() {
+		String result = verify("TestSimpleGen11_376_at_testM_OK_4");
+		assertEquals(result, "Program is SAFE\n", result);
+	}
+	
+	@Test
+	public void TestSimpleGen11_380_at_testOAMu_OK_8() {
+		String result = verify("TestSimpleGen11_380_at_testOAMu_OK_8");
+		assertEquals(result, "Program is SAFE\n", result);
+	}
+	
+	@Test
+	public void TestSimpleGen10_199_at_testRRR_OK_24() {
+		String result = verify("TestSimpleGen10_199_at_testRRR_OK_24");
+		assertEquals(result, "Program is SAFE\n", result);
+	}
+	
+	@Test
+	public void TestSimpleGen10_187_at_testRRR_OK_12() {
+		String result = verify("TestSimpleGen10_187_at_testRRR_OK_12");
+		assertEquals(result, "Program is SAFE\n", result);
+	}
+	
+	@Test
 	public void testOverflowTest() {
 		String result = verify("OverflowTest");
 		// program is UNSAFE due to overflow
