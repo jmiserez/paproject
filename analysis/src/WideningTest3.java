@@ -3,10 +3,11 @@ public class WideningTest3 {
 	
 	public static void main() {
 		AircraftControl ac = new AircraftControl();
-		int pressure = 0;
-		int parameter = 950;
+		int pressure = 950;
+		int parameter = 0;
 		
-		while(pressure < 200){
+		while(parameter < 200){
+			parameter++;
 			pressure++; //--> will go to Integer.MAX_VALUE with widening, and 1150 without it
 		}
 		

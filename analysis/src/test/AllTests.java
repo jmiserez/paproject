@@ -121,30 +121,30 @@ public class AllTests {
 	
 	@Test
 	public void testWideningTest2_widening5() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
+		//program is SAFE, but our analyzer will always say UNSAFE, regardless of widening
 		Analysis.WIDENING_ITERATIONS = 5;
 		String result = verify("WideningTest2");
-		assertEquals("Program is UNSAFE\n", result);
+		assertEquals("Program is SAFE\n", result);
 	}
 	@Test
 	public void testWideningTest2_widening1000() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
+		//program is SAFE, but our analyzer will always say UNSAFE, regardless of widening
 		Analysis.WIDENING_ITERATIONS = 1000;
-		String result = verify("WideningTest2"); //no widening takes place here
+		String result = verify("WideningTest2");
 		assertEquals("Program is SAFE\n", result);
 	}
 	
 	@Test
 	public void testWideningTest3_widening5() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
+		//program is SAFE, but widening will say UNSAFE if  <= 200 iterations (which is sound, but not precise)
 		Analysis.WIDENING_ITERATIONS = 5;
 		String result = verify("WideningTest3");
 		assertEquals("Program is UNSAFE\n", result);
 	}
 	@Test
-	public void testWideningTest3_widening1000() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
-		Analysis.WIDENING_ITERATIONS = 1000;
+	public void testWideningTest3_widening300() {
+		//program is SAFE, but widening will say UNSAFE if  <= 200 iterations (which is sound, but not precise)
+		Analysis.WIDENING_ITERATIONS = 300;
 		String result = verify("WideningTest3"); //no widening takes place here
 		assertEquals("Program is UNSAFE\n", result);
 	}
