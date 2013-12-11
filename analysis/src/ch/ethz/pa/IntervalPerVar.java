@@ -1,6 +1,7 @@
 package ch.ethz.pa;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import ch.ethz.pa.domain.AbstractDomain;
 import ch.ethz.pa.domain.Domain;
@@ -163,6 +164,10 @@ public class IntervalPerVar {
 		if (!(o instanceof IntervalPerVar)) return false;
 		IntervalPerVar other = (IntervalPerVar) o;
 		return other.values.equals(values) && other.adjustValueCount.equals(adjustValueCount) && other.readSensorCount.equals(readSensorCount);
+	}
+	
+	public Set<String> getVarNames(){
+		return values.keySet();
 	}
 
 }

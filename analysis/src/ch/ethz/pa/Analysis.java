@@ -55,7 +55,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			}
 		}
 		System.err.println("Operation (depth "+currentLoops.size()+"): " + op + "   - " + op.getClass().getName() + "\n      current state: " + current);
-		
+				
 		if(currentLoops.size() > 0){
 			Loop currentInner = currentLoops.get(0);
 			if(wideningInformation.get(currentInner) == null){
@@ -65,9 +65,16 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 			Stmt loopHead = currentInner.getHead(); // the first statement in the loop, usually the condition with goto
 			if(s.equals(loopHead)){
 				System.err.println("Entering loop");
+				if(currentAnnotation.widened){
+					// force fixpoint convergence
+					// TODO: this is a hack. Really we should be doing this in the merge or somewhere else that is handled by Soot.
+					for(String widenedVar : currentAnnotation.widenedValues.getVarNames()){
+						fallState.putIntervalForVar(widenedVar, currentAnnotation.widenedValues.getIntervalForVar(widenedVar));
+					}
+				}
 				//we are at the head entering a loop, update count and reset all widenings of nested loops
 				currentAnnotation.headCount++;
-				currentAnnotation.headStmtValues = current.copy();
+				currentAnnotation.headStmtValues = fallState.copy();
 				
 				// all loops < currentInner are nested deeper inside this loop
 				for(Loop deeperLoop : loops.headSet(currentInner, false)){
@@ -112,7 +119,7 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 							diffCounts.put(varName, 1);
 						}
 						int count = diffCounts.get(varName);
-						if(prevDiff != null && prevDiff.get(varName) != null && prevDiff.get(varName).equals(direction)){
+						if(WIDENING_ITERATIONS == 1 ||(prevDiff != null && prevDiff.get(varName) != null && prevDiff.get(varName).equals(direction))){
 							count++;
 							diffCounts.put(varName, count); //this variable went in the same direction as previously
 							if(count >= WIDENING_ITERATIONS){
@@ -121,12 +128,15 @@ public class Analysis extends ForwardBranchedFlowAnalysis<IntervalPerVar> {
 								System.err.println("Doing widening for "+varName);
 								
 								AbstractDomain interval = fallState.getIntervalForVar(varName);
-								fallState.putIntervalForVar(varName, interval.widen(direction));
+								AbstractDomain widenedInterval = interval.widen(direction);
+								fallState.putIntervalForVar(varName, widenedInterval);
+								currentAnnotation.widenedValues.putIntervalForVar(varName, widenedInterval);
 								
 								diffCounts.put(varName, 0); //reset
 								
 								System.err.println(
 										 "      fallState: " + fallState + "\n      branchState: " + branchState);
+								
 								wideningNecessary = true;
 							}
 						}
