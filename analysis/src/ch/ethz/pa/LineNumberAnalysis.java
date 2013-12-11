@@ -14,7 +14,7 @@ public class LineNumberAnalysis extends ForwardFlowAnalysis<Unit, HashMap<Stmt,I
 	
 	public LineNumberAnalysis(DirectedGraph<Unit> g) {
 		super(g);
-		System.err.println(g.toString());
+//		System.err.println(g.toString());
 	}
 	
 	HashMap<Stmt,Integer> run() {

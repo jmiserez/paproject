@@ -10,7 +10,8 @@ public class WideningTest2 {
 			pressure += parameter++;
 		}
 		
-		ac.adjustValue(1, pressure); //SAFE, but with widening this will say UNSAFE
+		
+		ac.adjustValue(1, pressure); //SAFE
 	}
 
 }

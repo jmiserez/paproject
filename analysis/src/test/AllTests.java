@@ -93,7 +93,6 @@ public class AllTests {
 	@Test
 	public void TestSoundBranch1_305_at_testBranch1() {
 		String result = verify("TestSoundBranch1_305_at_testBranch1");
-		//program is safe due to condition in the end
 		assertEquals(result, "Program is UNSAFE\n", result);
 	}
 	
