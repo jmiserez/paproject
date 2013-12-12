@@ -1,5 +1,8 @@
 package ch.ethz.pa.domain;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
@@ -131,21 +134,38 @@ class Interval extends AbstractDomain {
 	}
 	
 	public AbstractDomain divide(AbstractDomain a) {
-//		// Note: we do not check for division by 0
-//		// division by -1 can negate the number, otherwise the number can only get smaller
-//		Interval i = (Interval) a;
-//		long newLower;
-//		long newUpper;
-//		if(i.lower < 0 && i.upper >= 0){
-//			//contains -1
-//			newLower = Math.min(Math.min(-this.lower, this.lower),Math.min(-this.upper, this.upper));
-//			newUpper = Math.max(Math.max(-this.lower, this.lower),Math.max(-this.upper, this.upper));
-//		}
-//		
+		// Note: we do not check for division by 0
+		// division by negative numbers negate the result
+		// [500, 1000] / [2,4] = [500/4, 1000/2]
+		// [-300, 100] / [-2,4] = [-300/1, -300/-1] = [-300, 300]
+		// [-300, 100] / [2,4] = [-300/2, 100/2] = [-150, 50]
+		// [-300, 100] / [-2,-4] = [100/-2, -300/-2] = [-50, 150]
 		
-		//TODO do properly
-		return TOP.copy(); //TODO implement;
-//		return handleOverflow(new Interval(newLower, newUpper));
+		// to make this bullet-proof, it seems like we can just compare all the possibilities, with an extra case for -1
+		// TODO: figure out the underlying logic and implement without candidate list
+		
+		Interval i = (Interval) a;
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
+		if(i.lower <= -1 && i.upper >= -1){
+			//contains -1
+			candidates.add(this.lower/-1);
+			candidates.add(this.upper/-1);
+		}
+		if(i.lower <= 1 && i.upper >= 1){
+			//contains 1
+			candidates.add(this.lower/1);
+			candidates.add(this.upper/1);
+		}
+		candidates.add(this.lower/i.lower);
+		candidates.add(this.upper/i.lower);
+		candidates.add(this.lower/i.upper);
+		candidates.add(this.upper/i.upper);
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain rem(AbstractDomain a) {
