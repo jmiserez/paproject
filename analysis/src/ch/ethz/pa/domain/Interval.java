@@ -141,10 +141,13 @@ class Interval extends AbstractDomain {
 		// [-300, 100] / [2,4] = [-300/2, 100/2] = [-150, 50]
 		// [-300, 100] / [-2,-4] = [100/-2, -300/-2] = [-50, 150]
 		
-		// to make this bullet-proof, it seems like we can just compare all the possibilities, with an extra case for -1
+		// to make this bullet-proof, it seems like we can just compare all the possibilities, with an extra case for -1 and 1
 		// TODO: figure out the underlying logic and implement without candidate list
 		
 		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
 		long newUpper;
@@ -173,6 +176,7 @@ class Interval extends AbstractDomain {
 		// this % a
 		// result is negative iff this is < 0 (sign of a has no influence)
 		// abs(result) is always smaller than a
+		//TODO: check if this is actually correct
 		Interval i = (Interval) a;
 		if(isTop() || i.isTop()){
 			return TOP.copy();
@@ -302,11 +306,64 @@ class Interval extends AbstractDomain {
 	}
 
 	public AbstractDomain shl(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+		// slight problem with shifting by negative values: 
+		//    1 << -5          
+		//       is defined seperately as 
+		//    1 << (-5 & 0xf1)
+		// as per: http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.19
+		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
+		//
+		// example output:
+		//		0:	1				0:	1
+		//		1:	2				-1:	-2147483648
+		//		2:	4				-2:	1073741824
+		//		3:	8				-3:	536870912
+		//		4:	16				-4:	268435456
+		//		5:	32				-5:	134217728
+		//		6:	64				-6:	67108864
+		//		7:	128				-7:	33554432
+		//		8:	256				-8:	16777216
+		//		9:	512				-9:	8388608
+		//		10:	1024			-10: 4194304
+		//		11:	2048			-11: 2097152
+		//		12:	4096			-12: 1048576
+		//		13:	8192			-13: 524288
+		//		14:	16384			-14: 262144
+		//		15:	32768			-15: 131072
+		//		16:	65536			-16: 65536
+		//		17:	131072			-17: 32768
+		//		18:	262144			-18: 16384
+		//		19:	524288			-19: 8192
+		//		20:	1048576			-20: 4096
+		//		21:	2097152			-21: 2048
+		//		22:	4194304			-22: 1024
+		//		23:	8388608			-23: 512
+		//		24:	16777216		-24: 256
+		//		25:	33554432		-25: 128
+		//		26:	67108864		-26: 64
+		//		27:	134217728		-27: 32
+		//		28:	268435456		-28: 16
+		//		29:	536870912		-29: 8
+		//		30:	1073741824		-30: 4
+		//		31:	-2147483648		-31: 2
+		//		32:	1		-32:	1
+		//		33:	2		-33:	-2147483648
+		
+//		Interval i = (Interval) a;
+//		if(isTop() || i.isTop()){
+//			return TOP.copy();
+//		}
+//		return multiply(new Interval(1 << i.lower,  1 << i.upper));
+		return TOP.copy();
 	}
 
 	public AbstractDomain shr(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+//		Interval i = (Interval) a;
+//		if(isTop() || i.isTop()){
+//			return TOP.copy();
+//		}
+//		return divide(new Interval(1 << i.lower,  1 << i.upper));
+		return TOP.copy();
 	}
 	
 	public AbstractDomain ushr(AbstractDomain a) {
