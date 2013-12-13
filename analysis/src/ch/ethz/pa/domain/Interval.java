@@ -55,7 +55,7 @@ class Interval extends AbstractDomain {
 		bot = i.bot;
 	}
 
-	private static AbstractDomain handleOverflow(Interval i) {
+	private static AbstractDomain moveIntoRange(Interval i) {
 		if (i.lower > i.upper){
 			return TOP.copy();
 		}
@@ -76,11 +76,17 @@ class Interval extends AbstractDomain {
 					return i;
 				}
 				//this happens if the interval crosses a boundary
-				return TOP.copy();
+				//return TOP.copy();
 			}
 			return TOP.copy();
 		} else {
 			return i;
+		}
+	}
+	
+	private void handleOverflow(Interval i) {
+		if (i.lower < MIN_VALUE || i.upper > MAX_VALUE) {
+			i.copyFrom(TOP);
 		}
 	}
 
@@ -102,7 +108,7 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		return handleOverflow(new Interval(this.lower + Math.min(i.lower, i.upper), this.upper + Math.max(i.lower, i.upper)));
+		return moveIntoRange(new Interval(this.lower + Math.min(i.lower, i.upper), this.upper + Math.max(i.lower, i.upper)));
 	}
 
 	public AbstractDomain minus(AbstractDomain a) {
@@ -110,11 +116,13 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		return handleOverflow(new Interval(this.lower - Math.max(i.lower, i.upper), this.upper - Math.min(i.lower, i.upper)));
+		return moveIntoRange(new Interval(this.lower - Math.max(i.lower, i.upper), this.upper - Math.min(i.lower, i.upper)));
 	}
 
 	public AbstractDomain multiply(AbstractDomain a) {
-		Interval i = (Interval) a;
+		Interval i = (Interval) a.copy();
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -127,7 +135,7 @@ class Interval extends AbstractDomain {
 		// To handle case [-2, -1] * [-2, -1]
 		if (this.upper < 0 && i.upper < 0 && (this.upper >= 0 || i.upper >= 0))
 			newUpper *= -1;
-		return handleOverflow(new Interval(newLower, newUpper));
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain divide(AbstractDomain a) {
@@ -172,7 +180,7 @@ class Interval extends AbstractDomain {
 		if(thisMin < -maxAbsRemainder){
 			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
 		}
-		return handleOverflow(new Interval(newLower, newUpper));
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain neg() {
@@ -189,7 +197,7 @@ class Interval extends AbstractDomain {
 			newUpper = newLower ^ newUpper;
 			newLower = newLower ^ newUpper;
 		}
-		return handleOverflow(new Interval(newLower, newUpper));
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain and(AbstractDomain a) {
@@ -295,17 +303,21 @@ class Interval extends AbstractDomain {
 	
 	@Override
 	public AbstractDomain join(AbstractDomain a) {
-		Interval i = (Interval) a;
+		Interval i = (Interval) a.copy();
+		handleOverflow(this); 
+		handleOverflow(i);
 		if (this.equals(BOT))
 			return i.copy();
 		if (i.equals(BOT))
 			return this.copy();
-		return handleOverflow(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
+		return moveIntoRange(new Interval(Math.min(this.lower, i.lower), Math.max(this.upper, i.upper)));
 	}
 	
 	@Override
 	public AbstractDomain meet(AbstractDomain a) {
-		Interval i = (Interval) a;
+		Interval i = (Interval) a.copy();
+		handleOverflow(this); 
+		handleOverflow(i);
 		if (this.equals(BOT))
 			return BOT.copy();
 		if (i.equals(BOT))
