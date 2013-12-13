@@ -176,7 +176,7 @@ class Interval extends AbstractDomain {
 		
 		newLower = Collections.min(candidates);
 		newUpper = Collections.max(candidates);
-		return handleOverflow(new Interval(newLower, newUpper));
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain rem(AbstractDomain a) {

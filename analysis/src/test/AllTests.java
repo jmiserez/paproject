@@ -91,90 +91,9 @@ public class AllTests {
 	}
 	
 	@Test
-	public void TestSoundBranch1_305_at_testBranch1() {
-		String result = verify("TestSoundBranch1_305_at_testBranch1");
-		assertEquals(result, "Program is UNSAFE\n", result);
-	}
-	
-	@Test
-	public void TestSimpleGen1_224_at_testL_OK_0() {
-		String result = verify("TestSimpleGen1_224_at_testL_OK_0");
-		assertEquals(result, "Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void TestSimpleGen11_376_at_testM_OK_4() {
-		String result = verify("TestSimpleGen11_376_at_testM_OK_4");
-		assertEquals(result, "Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void TestSimpleGen11_380_at_testOAMu_OK_8() {
-		String result = verify("TestSimpleGen11_380_at_testOAMu_OK_8");
-		assertEquals(result, "Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void TestSimpleGen10_199_at_testRRR_OK_24() {
-		String result = verify("TestSimpleGen10_199_at_testRRR_OK_24");
-		assertEquals(result, "Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void TestSimpleGen10_187_at_testRRR_OK_12() {
-		String result = verify("TestSimpleGen10_187_at_testRRR_OK_12");
-		assertEquals(result, "Program is SAFE\n", result);
-	}
-	
-	@Test
 	public void testOverflowTest() {
 		String result = verify("OverflowTest");
 		// program is UNSAFE due to overflow
-		assertEquals("Program is UNSAFE\n", result);
-	}
-	
-	@Test
-	public void testWideningTest_widening5() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
-		Analysis.WIDENING_ITERATIONS = 5;
-		String result = verify("WideningTest");
-		assertEquals("Program is UNSAFE\n", result);
-	}
-	@Test
-	public void testWideningTest_widening1000() {
-		//program is SAFE, but widening will say UNSAFE if  <= 500 iterations (which is sound, but not precise)
-		Analysis.WIDENING_ITERATIONS = 1000;
-		String result = verify("WideningTest"); //no widening takes place here
-		assertEquals("Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void testWideningTest2_widening5() {
-		//program is SAFE, but our analyzer will always say UNSAFE, regardless of widening
-		Analysis.WIDENING_ITERATIONS = 5;
-		String result = verify("WideningTest2");
-		assertEquals("Program is SAFE\n", result);
-	}
-	@Test
-	public void testWideningTest2_widening1000() {
-		//program is SAFE, but our analyzer will always say UNSAFE, regardless of widening
-		Analysis.WIDENING_ITERATIONS = 1000;
-		String result = verify("WideningTest2");
-		assertEquals("Program is SAFE\n", result);
-	}
-	
-	@Test
-	public void testWideningTest3_widening5() {
-		//program is SAFE, but widening will say UNSAFE if  <= 200 iterations (which is sound, but not precise)
-		Analysis.WIDENING_ITERATIONS = 5;
-		String result = verify("WideningTest3");
-		assertEquals("Program is UNSAFE\n", result);
-	}
-	@Test
-	public void testWideningTest3_widening300() {
-		//program is SAFE, but widening will say UNSAFE if  <= 200 iterations (which is sound, but not precise)
-		Analysis.WIDENING_ITERATIONS = 300;
-		String result = verify("WideningTest3"); //no widening takes place here
 		assertEquals("Program is UNSAFE\n", result);
 	}
 	
@@ -183,11 +102,16 @@ public class AllTests {
 		String result = verify("NotTest");
 		assertEquals("Program is UNSAFE\n", result);
 	}
-	
+
 	@Test
 	public void testOverflowLoopTest() {
-		Analysis.WIDENING_ITERATIONS = 1000;
 		String result = verify("OverflowLoopTest");
+		assertEquals("Program is SAFE\n", result);
+	}
+
+	@Test
+	public void testOverflowLoopTest2() {
+		String result = verify("OverflowLoopTest2");
 		assertEquals("Program is SAFE\n", result);
 	}
 	
