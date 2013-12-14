@@ -320,7 +320,7 @@ class Interval extends AbstractDomain {
 		long normalizedLower = i.lower & 0x1f; //e.g. 8 or 0
 		long normalizedRange = Math.min(31, i.upper - i.lower); //e.g 27 or 31
 		long normalizedUpper = normalizedLower + normalizedRange; //e.g 8+27=35 or 0+31=31
-		//normalized is a range somewhere in [0, e.g. [8, 35]
+		//normalized is a range somewhere in [0,31] e.g. [8, 35] or [0,31]
 		// note: 1 << 8 == 1 << 8, but 1 << 35 == 1 << 3, so we actually have to deal with 2 intervals
 		
 		if(normalizedUpper > 31){
@@ -330,7 +330,7 @@ class Interval extends AbstractDomain {
 			long upper2 = normalizedUpper % 32;
 			Interval interval1 = (Interval) multiply(new Interval(1 << lower1,  1 << upper1));
 			Interval interval2 = (Interval) multiply(new Interval(1 << lower2,  1 << upper2));
-			return new Interval(Math.min(interval1.lower, interval2.lower), Math.max(interval1.upper, interval2.upper));
+			return handleOverflow(new Interval(Math.min(interval1.lower, interval2.lower), Math.max(interval1.upper, interval2.upper)));
 		} else {
 			return multiply(new Interval(1 << normalizedLower,  1 << normalizedUpper));
 		}
