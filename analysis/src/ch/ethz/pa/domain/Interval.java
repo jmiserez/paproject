@@ -335,7 +335,7 @@ class Interval extends AbstractDomain {
 			long newUpper3 = this.upper << 0;
 			long newUpper4 = this.upper << 31;
 			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
-			newUpper = Math.min(Math.min(newUpper1, newUpper2), Math.min(newUpper3, newUpper4));
+			newUpper = Math.max(Math.max(newUpper1, newUpper2), Math.max(newUpper3, newUpper4));
 		} else {
 			//normalizedLower >= 0, normalizedUpper <= 31
 			long newLower1 = this.lower << normalizedLower;
@@ -343,33 +343,43 @@ class Interval extends AbstractDomain {
 			long newUpper1 = this.upper << normalizedLower;
 			long newUpper2 = this.upper << normalizedUpper;
 			newLower = Math.min(newLower1, newLower2);
-			newUpper = Math.min(newUpper1, newUpper2);
+			newUpper = Math.max(newUpper1, newUpper2);
 		}
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 
 	public AbstractDomain shr(AbstractDomain a) {
-//		Interval i = (Interval) a;
-//		if(isTop() || i.isTop()){
-//			return TOP.copy();
-//		}
-//		long normalizedLower = i.lower & 0x1f;
-//		long normalizedRange = Math.min(31, i.upper - i.lower);
-//		long normalizedUpper = normalizedLower + normalizedRange;
-//		
-//		if(normalizedUpper > 31){
-//			long newLower1 = this.lower >> 31;
-//			long newUpper1 = this.upper >> normalizedLower;
-//			long newLower2 = this.lower >> normalizedUpper % 32;
-//			long newUpper2 = this.upper >> 0;
-//			return handleOverflow(new Interval(Math.min(newLower1, newLower2), Math.max(newUpper1, newUpper2)));
-//		} else {
-//			//normalizedLower >= 0, normalizedUpper <= 31
-//			long newLower = this.lower >> normalizedLower;
-//			long newUpper = this.upper >> normalizedUpper;
-//			return handleOverflow(new Interval(newLower, newUpper));
-//		}
-		return TOP.copy();
+		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		long normalizedLower = i.lower & 0x1f;
+		long normalizedRange = Math.min(31, i.upper - i.lower);
+		long normalizedUpper = normalizedLower + normalizedRange;
+		
+		long newLower;
+		long newUpper;
+		if(normalizedUpper > 31){
+			long newLower1 = this.lower >> normalizedLower;
+			long newLower2 = this.lower >> normalizedUpper % 32;
+			long newUpper1 = this.upper >> normalizedLower;
+			long newUpper2 = this.upper >> normalizedUpper % 32;
+			long newLower3 = this.lower >> 0;
+			long newLower4 = this.lower >> 31;
+			long newUpper3 = this.upper >> 0;
+			long newUpper4 = this.upper >> 31;
+			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
+			newUpper = Math.max(Math.max(newUpper1, newUpper2), Math.max(newUpper3, newUpper4));
+		} else {
+			//normalizedLower >= 0, normalizedUpper <= 31
+			long newLower1 = this.lower >> normalizedLower;
+			long newLower2 = this.lower >> normalizedUpper;
+			long newUpper1 = this.upper >> normalizedLower;
+			long newUpper2 = this.upper >> normalizedUpper;
+			newLower = Math.min(newLower1, newLower2);
+			newUpper = Math.max(newUpper1, newUpper2);
+		}
+		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain ushr(AbstractDomain a) {
