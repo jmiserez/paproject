@@ -323,18 +323,29 @@ class Interval extends AbstractDomain {
 		//normalized is a range somewhere in [0,31] e.g. [8, 35] or [0,31]
 		// note: 1 << 8 == 1 << 8, but 1 << 35 == 1 << 3, so we actually have to deal with 2 intervals
 		
+		long newLower;
+		long newUpper;
 		if(normalizedUpper > 31){
 			long newLower1 = this.lower << normalizedLower;
-			long newUpper1 = this.upper << 31;
-			long newLower2 = this.lower << 0;
+			long newLower2 = this.lower << normalizedUpper % 32;
+			long newUpper1 = this.upper << normalizedLower;
 			long newUpper2 = this.upper << normalizedUpper % 32;
-			return handleOverflow(new Interval(Math.min(newLower1, newLower2), Math.max(newUpper1, newUpper2)));
+			long newLower3 = this.lower << 0;
+			long newLower4 = this.lower << 31;
+			long newUpper3 = this.upper << 0;
+			long newUpper4 = this.upper << 31;
+			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
+			newUpper = Math.min(Math.min(newUpper1, newUpper2), Math.min(newUpper3, newUpper4));
 		} else {
 			//normalizedLower >= 0, normalizedUpper <= 31
-			long newLower = this.lower << normalizedLower;
-			long newUpper = this.upper << normalizedUpper;
-			return handleOverflow(new Interval(newLower, newUpper));
+			long newLower1 = this.lower << normalizedLower;
+			long newLower2 = this.lower << normalizedUpper;
+			long newUpper1 = this.upper << normalizedLower;
+			long newUpper2 = this.upper << normalizedUpper;
+			newLower = Math.min(newLower1, newLower2);
+			newUpper = Math.min(newUpper1, newUpper2);
 		}
+		return handleOverflow(new Interval(newLower, newUpper));
 	}
 
 	public AbstractDomain shr(AbstractDomain a) {
@@ -342,12 +353,53 @@ class Interval extends AbstractDomain {
 //		if(isTop() || i.isTop()){
 //			return TOP.copy();
 //		}
-//		return divide(new Interval(1 << i.lower,  1 << i.upper));
+//		long normalizedLower = i.lower & 0x1f;
+//		long normalizedRange = Math.min(31, i.upper - i.lower);
+//		long normalizedUpper = normalizedLower + normalizedRange;
+//		
+//		if(normalizedUpper > 31){
+//			long newLower1 = this.lower >> 31;
+//			long newUpper1 = this.upper >> normalizedLower;
+//			long newLower2 = this.lower >> normalizedUpper % 32;
+//			long newUpper2 = this.upper >> 0;
+//			return handleOverflow(new Interval(Math.min(newLower1, newLower2), Math.max(newUpper1, newUpper2)));
+//		} else {
+//			//normalizedLower >= 0, normalizedUpper <= 31
+//			long newLower = this.lower >> normalizedLower;
+//			long newUpper = this.upper >> normalizedUpper;
+//			return handleOverflow(new Interval(newLower, newUpper));
+//		}
 		return TOP.copy();
 	}
 	
 	public AbstractDomain ushr(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+//		Interval i = (Interval) a;
+//		if(isTop() || i.isTop()){
+//			return TOP.copy();
+//		}
+//		long normalizedLower = i.lower & 0x1f;
+//		long normalizedRange = Math.min(31, i.upper - i.lower);
+//		long normalizedUpper = normalizedLower + normalizedRange;
+//		
+//		if(normalizedUpper > 31){
+//			long newLower1 = this.lower >>> normalizedLower;
+//			long newUpper1 = this.upper >>> 31;
+//			long newLower2 = this.lower >>> 0;
+//			long newUpper2 = this.upper >>> normalizedUpper % 32;
+//			
+//			if(normalizedUpper > 32){
+//				// 1 is also included in range
+//			}
+//			long newLower3 = this.lower >>> 1; //NOTE: different from shr()
+//			
+//			return handleOverflow(new Interval(Math.min(newLower1, newLower2), Math.max(newUpper1, newUpper2)));
+//		} else {
+//			//normalizedLower >= 0, normalizedUpper <= 31
+//			long newLower = this.lower >> normalizedLower;
+//			long newUpper = this.upper >> normalizedUpper;
+//			return handleOverflow(new Interval(newLower, newUpper));
+//		}
+		return TOP.copy();
 	}
 	
 	@Override
