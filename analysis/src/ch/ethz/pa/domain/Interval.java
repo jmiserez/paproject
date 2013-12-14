@@ -306,55 +306,34 @@ class Interval extends AbstractDomain {
 	}
 
 	public AbstractDomain shl(AbstractDomain a) {
-		// slight problem with shifting by negative values: 
-		//    1 << -5          
-		//       is defined seperately as 
-		//    1 << (-5 & 0xf1)
+		// Note: Shifting by x is actually defined as: 
+		//    1 << x == 1 << (x & 0xf1)
 		// as per: http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.19
 		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
-		//
-		// example output:
-		//		0:	1				0:	1
-		//		1:	2				-1:	-2147483648
-		//		2:	4				-2:	1073741824
-		//		3:	8				-3:	536870912
-		//		4:	16				-4:	268435456
-		//		5:	32				-5:	134217728
-		//		6:	64				-6:	67108864
-		//		7:	128				-7:	33554432
-		//		8:	256				-8:	16777216
-		//		9:	512				-9:	8388608
-		//		10:	1024			-10: 4194304
-		//		11:	2048			-11: 2097152
-		//		12:	4096			-12: 1048576
-		//		13:	8192			-13: 524288
-		//		14:	16384			-14: 262144
-		//		15:	32768			-15: 131072
-		//		16:	65536			-16: 65536
-		//		17:	131072			-17: 32768
-		//		18:	262144			-18: 16384
-		//		19:	524288			-19: 8192
-		//		20:	1048576			-20: 4096
-		//		21:	2097152			-21: 2048
-		//		22:	4194304			-22: 1024
-		//		23:	8388608			-23: 512
-		//		24:	16777216		-24: 256
-		//		25:	33554432		-25: 128
-		//		26:	67108864		-26: 64
-		//		27:	134217728		-27: 32
-		//		28:	268435456		-28: 16
-		//		29:	536870912		-29: 8
-		//		30:	1073741824		-30: 4
-		//		31:	-2147483648		-31: 2
-		//		32:	1		-32:	1
-		//		33:	2		-33:	-2147483648
+		// 
 		
-//		Interval i = (Interval) a;
-//		if(isTop() || i.isTop()){
-//			return TOP.copy();
-//		}
-//		return multiply(new Interval(1 << i.lower,  1 << i.upper));
-		return TOP.copy();
+		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		//e.g. -56 to -29 or -64 to -33
+		long normalizedLower = i.lower & 0x1f; //e.g. 8 or 0
+		long normalizedRange = Math.min(31, i.upper - i.lower); //e.g 27 or 31
+		long normalizedUpper = normalizedLower + normalizedRange; //e.g 8+27=35 or 0+31=31
+		//normalized is a range somewhere in [0, e.g. [8, 35]
+		// note: 1 << 8 == 1 << 8, but 1 << 35 == 1 << 3, so we actually have to deal with 2 intervals
+		
+		if(normalizedUpper > 31){
+			long lower1 = normalizedLower;
+			long upper1 = 31;
+			long lower2 = 0;
+			long upper2 = normalizedUpper % 32;
+			Interval interval1 = (Interval) multiply(new Interval(1 << lower1,  1 << upper1));
+			Interval interval2 = (Interval) multiply(new Interval(1 << lower2,  1 << upper2));
+			return new Interval(Math.min(interval1.lower, interval2.lower), Math.max(interval1.upper, interval2.upper));
+		} else {
+			return multiply(new Interval(1 << normalizedLower,  1 << normalizedUpper));
+		}
 	}
 
 	public AbstractDomain shr(AbstractDomain a) {
