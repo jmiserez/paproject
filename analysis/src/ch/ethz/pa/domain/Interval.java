@@ -304,121 +304,73 @@ class Interval extends AbstractDomain {
 	public AbstractDomain xor(AbstractDomain a) {
 		return TOP.copy(); //TODO implement
 	}
-
-	public AbstractDomain shl(AbstractDomain a) {
+	
+	private enum ShiftType {
+		SHL, SHR, USHR
+	};
+	
+	private long shift(long a, long b, ShiftType type){
+		switch (type) {
+		case SHL:
+			return a << b;
+		case SHR:
+			return a >> b;
+		case USHR:
+			return a >>> b;
+		default:
+			throw new IllegalArgumentException("type must be != null");
+		}
+	}
+	
+	private AbstractDomain handleShift(AbstractDomain a, ShiftType type){
 		// Note: Shifting by x is actually defined as: 
 		//    1 << x == 1 << (x & 0xf1)
 		// as per: http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.19
 		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
 		// 
-		
 		Interval i = (Interval) a;
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		//e.g. -56 to -29 or -64 to -33
-		long normalizedLower = i.lower & 0x1f; //e.g. 8 or 0
-		long normalizedRange = Math.min(31, i.upper - i.lower); //e.g 27 or 31
-		long normalizedUpper = normalizedLower + normalizedRange; //e.g 8+27=35 or 0+31=31
-		//normalized is a range somewhere in [0,31] e.g. [8, 35] or [0,31]
-		// note: 1 << 8 == 1 << 8, but 1 << 35 == 1 << 3, so we actually have to deal with 2 intervals
+		long normalizedLower = i.lower & 0x1f;
+		long normalizedRange = Math.min(31, i.upper - i.lower);
+		long normalizedUpper = normalizedLower + normalizedRange;
 		
+		ArrayList<Long> candidates = new ArrayList<Long>();
 		long newLower;
 		long newUpper;
+		candidates.add(shift(this.lower,normalizedLower,type));
+		candidates.add(shift(this.upper,normalizedLower,type));
+		candidates.add(shift(this.lower,normalizedUpper % 32,type));
+		candidates.add(shift(this.upper,normalizedUpper % 32,type));
 		if(normalizedUpper > 31){
-			long newLower1 = this.lower << normalizedLower;
-			long newLower2 = this.lower << normalizedUpper % 32;
-			long newUpper1 = this.upper << normalizedLower;
-			long newUpper2 = this.upper << normalizedUpper % 32;
-			long newLower3 = this.lower << 0;
-			long newLower4 = this.lower << 31;
-			long newUpper3 = this.upper << 0;
-			long newUpper4 = this.upper << 31;
-			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
-			newUpper = Math.max(Math.max(newUpper1, newUpper2), Math.max(newUpper3, newUpper4));
+			//add special cases
+			candidates.add(shift(this.lower,0,type));
+			candidates.add(shift(this.upper,0,type));
+			candidates.add(shift(this.lower,31,type));
+			candidates.add(shift(this.upper,31,type));
 		} else {
-			//normalizedLower >= 0, normalizedUpper <= 31
-			long newLower1 = this.lower << normalizedLower;
-			long newLower2 = this.lower << normalizedUpper;
-			long newUpper1 = this.upper << normalizedLower;
-			long newUpper2 = this.upper << normalizedUpper;
-			newLower = Math.min(newLower1, newLower2);
-			newUpper = Math.max(newUpper1, newUpper2);
+			if(type == ShiftType.USHR && normalizedLower == 0){
+				//zero for USHR is really a special case, as it can lead to negative values
+				candidates.add(shift(this.lower,0,type));
+				candidates.add(shift(this.upper,0,type));
+			}
 		}
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 
+	public AbstractDomain shl(AbstractDomain a) {
+		return handleShift(a, ShiftType.SHL);
+	}
+
 	public AbstractDomain shr(AbstractDomain a) {
-		Interval i = (Interval) a;
-		if(isTop() || i.isTop()){
-			return TOP.copy();
-		}
-		long normalizedLower = i.lower & 0x1f;
-		long normalizedRange = Math.min(31, i.upper - i.lower);
-		long normalizedUpper = normalizedLower + normalizedRange;
-		
-		long newLower;
-		long newUpper;
-		if(normalizedUpper > 31){
-			long newLower1 = this.lower >> normalizedLower;
-			long newLower2 = this.lower >> normalizedUpper % 32;
-			long newUpper1 = this.upper >> normalizedLower;
-			long newUpper2 = this.upper >> normalizedUpper % 32;
-			long newLower3 = this.lower >> 0;
-			long newLower4 = this.lower >> 31;
-			long newUpper3 = this.upper >> 0;
-			long newUpper4 = this.upper >> 31;
-			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
-			newUpper = Math.max(Math.max(newUpper1, newUpper2), Math.max(newUpper3, newUpper4));
-		} else {
-			//normalizedLower >= 0, normalizedUpper <= 31
-			long newLower1 = this.lower >> normalizedLower;
-			long newLower2 = this.lower >> normalizedUpper;
-			long newUpper1 = this.upper >> normalizedLower;
-			long newUpper2 = this.upper >> normalizedUpper;
-			newLower = Math.min(newLower1, newLower2);
-			newUpper = Math.max(newUpper1, newUpper2);
-		}
-		return handleOverflow(new Interval(newLower, newUpper));
+		return handleShift(a, ShiftType.SHR);
 	}
 	
 	public AbstractDomain ushr(AbstractDomain a) {
-		Interval i = (Interval) a;
-		if(isTop() || i.isTop()){
-			return TOP.copy();
-		}
-		long normalizedLower = i.lower & 0x1f;
-		long normalizedRange = Math.min(31, i.upper - i.lower);
-		long normalizedUpper = normalizedLower + normalizedRange;
-		
-		long newLower;
-		long newUpper;
-		if(normalizedUpper > 31){	
-			long newLower1 = this.lower >>> normalizedLower;
-			long newLower2 = this.lower >>> normalizedUpper % 32;
-			long newUpper1 = this.upper >>> normalizedLower;
-			long newUpper2 = this.upper >>> normalizedUpper % 32;
-			long newLower3 = this.lower >>> 0;
-			long newLower4 = this.lower >>> 31;
-			long newUpper3 = this.upper >>> 0;
-			long newUpper4 = this.upper >>> 31;
-			newLower = Math.min(Math.min(newLower1, newLower2), Math.min(newLower3, newLower4));
-			newUpper = Math.max(Math.max(newUpper1, newUpper2), Math.max(newUpper3, newUpper4));
-		} else {
-			//normalizedLower >= 0, normalizedUpper <= 31
-			long newLower1 = this.lower >>> normalizedLower;
-			long newLower2 = this.lower >>> normalizedUpper;
-			long newUpper1 = this.upper >>> normalizedLower;
-			long newUpper2 = this.upper >>> normalizedUpper;
-			newLower = Math.min(newLower1, newLower2);
-			newUpper = Math.max(newUpper1, newUpper2);
-			if(normalizedLower == 0){
-				//zero is really a special case
-				newLower = Math.min(newLower, Math.min(this.lower >>> 0, this.upper >>> 0));
-				newUpper = Math.max(newUpper, Math.max(this.lower >>> 0, this.upper >>> 0));
-			}
-		}
-		return handleOverflow(new Interval(newLower, newUpper));
+		return handleShift(a, ShiftType.USHR);
 	}
 	
 	@Override
