@@ -324,15 +324,16 @@ class Interval extends AbstractDomain {
 		// note: 1 << 8 == 1 << 8, but 1 << 35 == 1 << 3, so we actually have to deal with 2 intervals
 		
 		if(normalizedUpper > 31){
-			long lower1 = normalizedLower;
-			long upper1 = 31;
-			long lower2 = 0;
-			long upper2 = normalizedUpper % 32;
-			Interval interval1 = (Interval) multiply(new Interval(1 << lower1,  1 << upper1));
-			Interval interval2 = (Interval) multiply(new Interval(1 << lower2,  1 << upper2));
-			return handleOverflow(new Interval(Math.min(interval1.lower, interval2.lower), Math.max(interval1.upper, interval2.upper)));
+			long newLower1 = this.lower << normalizedLower;
+			long newUpper1 = this.upper << 31;
+			long newLower2 = this.lower << 0;
+			long newUpper2 = this.upper << normalizedUpper % 32;
+			return handleOverflow(new Interval(Math.min(newLower1, newLower2), Math.max(newUpper1, newUpper2)));
 		} else {
-			return multiply(new Interval(1 << normalizedLower,  1 << normalizedUpper));
+			//normalizedLower >= 0, normalizedUpper <= 31
+			long newLower = this.lower << normalizedLower;
+			long newUpper = this.upper << normalizedUpper;
+			return handleOverflow(new Interval(newLower, newUpper));
 		}
 	}
 
