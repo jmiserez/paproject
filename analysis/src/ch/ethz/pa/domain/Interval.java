@@ -216,8 +216,115 @@ class Interval extends AbstractDomain {
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
+	
+	
+//	1000 0000 -> -128 Integer.MIN_VALUE
+//	1000 0001 -> -127 
+//	1000 0010 -> -126 
+//	1111 0000 ->  -16
+//	
+//	1111 0001 ->  -15
+//	1111 0010 ->  -14
+//	1111 0011 ->  -13
+//	1111 0100 ->  -12
+//	1111 0101 ->  -11
+//	1111 0110 ->  -10
+//	1111 0111 ->   -9
+//	1111 1000 ->   -8
+//	1111 1001 ->   -7
+//	1111 1010 ->   -6
+//	1111 1011 ->   -5
+//	1111 1100 ->   -4
+//	1111 1101 ->   -3
+//	1111 1110 ->   -2
+//	1111 1111 ->   -1
+//	
+//	0000 0000 ->    0
+//	0000 0001 ->    1
+//	0000 0010 ->    2
+//	0000 0011 ->    3
+//	0000 0100 ->    4
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	0000 0111 ->    7
+//	0000 1000 ->    8
+//	0000 1001 ->    9
+//	0000 1010 ->   10
+//	0000 1011 ->   11
+//	0000 1100 ->   12
+//	0000 1101 ->   13
+//	0000 1110 ->   14
+//	0000 1111 ->   15
+//	0001 0000 ->   16
+//
+//	0111 1100 ->  124
+//	0111 1101 ->  125
+//	0111 1110 ->  126
+//	0111 1111 ->  127 Integer.MAX_VALUE
+	
+// Examples:
+//	[3,7] & [7,11]
+//	[3,7] | [7,11]
+//	0000 0011 ->    3
+//	0000 0100 ->    4
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	0000 0111 ->    7
+//	
+//	0000 0111 ->    7
+//	0000 1000 ->    8
+//	0000 1001 ->    9
+//	0000 1010 ->   10
+//	0000 1011 ->   11
+//	
+//	& lower: 3 & 8 = 0
+//	0000 0000
+//	& upper: 7 & 7 = 7
+//	0000 0111
+//	| lower: 3 | 7 = 7
+//	0000 0111
+//	| upper: 7 | 11 = 15
+//	0000 1111
+//	
+//	Basic strategy for &:
+//	- In each set, reduce candidates to all numbers with the least length (i.e the numbers where the highest bit set is the lowest)
+//	- 
+//	
+//
+ 
+	
+	private int possibleOneBitSets(int lower, int upper) {
+		// which bits could be set to 1 in the range of [lower,upper] (inclusive)
+		// assume lower <= upper
+ 
+		Integer.l
+		ArrayList<Long> candidates = new ArrayList<Long>();
+
+		
+		long result = 0;
+		if(lower < 0){
+			result |= Integer.MIN_VALUE; //MSB set
+		}
+		
+		
+		return 0;
+	}
+	
 	public AbstractDomain and(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		ArrayList<Long> candidates = new ArrayList<Long>();
+		long newLower;
+		long newUpper;
+		
+		
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		return handleOverflow(new Interval(newLower, newUpper));
+
 //		Interval i = (Interval) a;
 //		
 //		List<Integer> newBounds = new ArrayList<Integer>();
@@ -303,23 +410,6 @@ class Interval extends AbstractDomain {
 
 	public AbstractDomain xor(AbstractDomain a) {
 		return TOP.copy(); //TODO implement
-	}
-	
-	private enum ShiftType {
-		SHL, SHR, USHR
-	};
-	
-	private long shift(long a, long b, ShiftType type){
-		switch (type) {
-		case SHL:
-			return a << b;
-		case SHR:
-			return a >> b;
-		case USHR:
-			return a >>> b;
-		default:
-			throw new IllegalArgumentException("type must be != null");
-		}
 	}
 	
 	private AbstractDomain handleShift(AbstractDomain a, ShiftType type){
@@ -470,6 +560,23 @@ class Interval extends AbstractDomain {
 	@Override
 	public boolean isBot() {
 		return lower == Interval.BOT.lower && upper == Interval.BOT.upper  && bot == true;
+	}
+	
+	private enum ShiftType {
+		SHL, SHR, USHR
+	};
+	
+	private long shift(long a, long b, ShiftType type){
+		switch (type) {
+		case SHL:
+			return a << b;
+		case SHR:
+			return a >> b;
+		case USHR:
+			return a >>> b;
+		default:
+			throw new IllegalArgumentException("type must be != null");
+		}
 	}
 	
 	@Override
