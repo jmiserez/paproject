@@ -314,7 +314,6 @@ class Interval extends AbstractDomain {
 		return result;
 	}
 	
-	
 	public AbstractDomain and(AbstractDomain a) {
 		Interval i = (Interval) a;
 		if(isTop() || i.isTop()){
@@ -323,18 +322,31 @@ class Interval extends AbstractDomain {
 		
 		ArrayList<Interval> thisSplit = this.split();
 		ArrayList<Interval> iSplit = i.split();
+		Interval currentBestResult = new Interval(0);
 		
-		int highestCommonOneBit = -1;
-		for(int k = 0; k < 32; k++){
-			if(thisSplit.get(k) != null && iSplit.get(k) != null){
-				highestCommonOneBit = k;
+		while(true){
+			int highestCommonOneBit = -1;
+			for(int k = 0; k < 32; k++){
+				if(thisSplit.get(k) != null && iSplit.get(k) != null){
+					highestCommonOneBit = k;
+				}
 			}
-		}
-		if(highestCommonOneBit >= 0){
-			//TODO: fill in, and put a while loop around everything
-		} else {
-			// absolutely no parts of any of the ranges have a bit set at the same position
-			return new Interval(0);
+			if(highestCommonOneBit >= 0){
+				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
+				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
+				
+				currentBestResult |= (1 << highestCommonOneBit);
+				
+				Interval newThis = thisSplit.get(highestCommonOneBit);
+				Interval newI = iSplit.get(highestCommonOneBit);
+				
+				
+				thisSplit = newThis.split();
+				iSplit = newI.split();
+			} else {
+				// absolutely no parts of any of the ranges have a bit set at the same position
+				return currentBestResult;
+			}
 		}
 		
 		return TOP.copy(); //TODO implement
@@ -550,51 +562,57 @@ class Interval extends AbstractDomain {
 		return TOP.copy();
 	}
 	
-/*	
- *  Some binary values
-   
-    1000 0000 -> -128 Integer.MIN_VALUE
-	1000 0001 -> -127 
-	1000 0010 -> -126 
-	1111 0000 ->  -16
-	
-	1111 0001 ->  -15
-	1111 0010 ->  -14
-	1111 0011 ->  -13
-	1111 0100 ->  -12
-	1111 0101 ->  -11
-	1111 0110 ->  -10
-	1111 0111 ->   -9
-	1111 1000 ->   -8
-	1111 1001 ->   -7
-	1111 1010 ->   -6
-	1111 1011 ->   -5
-	1111 1100 ->   -4
-	1111 1101 ->   -3
-	1111 1110 ->   -2
-	1111 1111 ->   -1
-	
-	0000 0000 ->    0
-	0000 0001 ->    1
-	0000 0010 ->    2
-	0000 0011 ->    3
-	0000 0100 ->    4
-	0000 0101 ->    5
-	0000 0110 ->    6
-	0000 0111 ->    7
-	0000 1000 ->    8
-	0000 1001 ->    9
-	0000 1010 ->   10
-	0000 1011 ->   11
-	0000 1100 ->   12
-	0000 1101 ->   13
-	0000 1110 ->   14
-	0000 1111 ->   15
-	0001 0000 ->   16
+//	
+//	The complete 8-bit 2's complement integer range.
+//  ================================================
+//	
+//	Dealing with unsigned values for bitwise operations:
+//	 - unsigned: result = a OP b
+//	 - signed:   result = ~(~a OP ~b)
+//	
+//  1000 0000 -> -128 Integer.MIN_VALUE
+//	1000 0001 -> -127 
+//	1000 0010 -> -126 
+//	1111 0000 ->  -16
+//	
+//	1111 0001 ->  -15
+//	1111 0010 ->  -14
+//	1111 0011 ->  -13
+//	1111 0100 ->  -12
+//	1111 0101 ->  -11
+//	1111 0110 ->  -10
+//	1111 0111 ->   -9
+//	1111 1000 ->   -8
+//	1111 1001 ->   -7
+//	1111 1010 ->   -6
+//	1111 1011 ->   -5
+//	1111 1100 ->   -4
+//	1111 1101 ->   -3
+//	1111 1110 ->   -2
+//	1111 1111 ->   -1
+//	
+//	0000 0000 ->    0
+//	0000 0001 ->    1
+//	0000 0010 ->    2
+//	0000 0011 ->    3
+//	0000 0100 ->    4
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	0000 0111 ->    7
+//	0000 1000 ->    8
+//	0000 1001 ->    9
+//	0000 1010 ->   10
+//	0000 1011 ->   11
+//	0000 1100 ->   12
+//	0000 1101 ->   13
+//	0000 1110 ->   14
+//	0000 1111 ->   15
+//	0001 0000 ->   16
+//
+//	0111 1100 ->  124
+//	0111 1101 ->  125
+//	0111 1110 ->  126
+//	0111 1111 ->  127 Integer.MAX_VALUE
 
-	0111 1100 ->  124
-	0111 1101 ->  125
-	0111 1110 ->  126
-	0111 1111 ->  127 Integer.MAX_VALUE*/
 
 }
