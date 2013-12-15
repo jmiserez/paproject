@@ -216,7 +216,128 @@ class Interval extends AbstractDomain {
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
+//	/**
+//	 * If we can select any two numbers (one from each interval), what is the highest bit that both numbers have set to one?
+//	 * E.g. 0000 1010
+//	 *      000100110
+//	 *      =========
+//	 *      000000010
+//	 */
+//	private int highestCommonOneBit(Interval a, Interval b){
+////		int highestA = Integer.highestOneBit(a.upper);
+////		int highestB = Integer.highestOneBit(b.upper);
+////		
+////		for(int i = 31; i >= 0; i--){
+////			
+////		}
+////		
+//		return 0; //TODO implement this function
+//	}
+//	
+//	/**
+//	 * If we can select any two numbers (one from each interval), what is the lowest bit that at least one number has set to zero?
+//	 * E.g. 0000 0010
+//	 *      000100100
+//	 *      =========
+//	 *      000000100
+//	 */
+//	private int lowestZeroBit(Interval a, Interval b){
+////		int highestA = Integer.highestOneBit(a.upper);
+////		int highestB = Integer.highestOneBit(b.upper);
+//		
+//		return 0; //TODO implement this function
+//	}
 	
+//	Interval thisCopy = (Interval) this.copy();
+//	Interval iCopy = (Interval) i.copy();
+//
+////	Basic strategy for &, upper: All bits that can be 1 in exactly both of the ranges
+////	- result = 0
+////	- while(true){
+////		- find highest common highestOneBit() in both ranges
+////	 	  -> we do not care about the less significant bits, as they will have less of an effect
+////		- if there is such a bit
+////			- set the bit on the result
+////			- discard all more significant bits and the bit itself in both ranges
+////		- else
+////			- return result
+//	newUpper = 0;
+//	int highestOneBit = 0;
+//	while((highestOneBit = highestCommonOneBit(thisCopy, iCopy)) != 0){
+//		newUpper |= highestOneBit;
+//		thisCopy = killGeqBits(thisCopy, highestOneBit);
+//		iCopy = killGeqBits(iCopy, highestOneBit);
+//	}
+//	candidates.add(newUpper);
+//	
+//	thisCopy = (Interval) this.copy();
+//	iCopy = (Interval) i.copy();
+//	
+//	 /*     0000 0010
+//	 *      0001 0100
+//	 *      =========
+//	 *      0000 0100
+//	 *      ---------
+//	 *      0000 0010
+//	 *      0000 0000
+//	 *      =========
+//	 */
+//	
+////	Basic strategy for &, lower: All bits that can be 0 in at least one of the ranges
+//	newLower = 0;
+//	int lowestZeroBit = -1; // ones
+//	int prevZeroBit;
+//	do {
+//		prevZeroBit = lowestZeroBit;
+//		lowestZeroBit = lowestZeroBit(thisCopy, iCopy);
+//		newLower &= ~lowestZeroBit; //set to 0
+//		thisCopy = killGeqBits(thisCopy, lowestZeroBit);
+//		iCopy = killGeqBits(iCopy, lowestZeroBit);
+//	} while(prevZeroBit != lowestZeroBit);
+//	candidates.add(newLower);
+	
+//	Interval i = (Interval) a;
+//
+//	List<Integer> newBounds = new ArrayList<Integer>();
+//	long[] thisBounds = {this.lower, this.upper};
+//	long[] iBounds = {i.lower, i.upper};
+//
+//	// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
+//	// 1: -/+ -> intersection = [0,0]
+//	// 2: +/- -> intersection = [0,0]
+//	// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
+//	
+//	for(long tBound : thisBounds){
+//		for(long iBound : iBounds){
+//			if(tBound < 0 && iBound < 0){
+//				newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound)))+1) - 1));
+//				newBounds.add(-1);
+//			}
+//			// case 2: this negative, i positive
+//			if(tBound < 0 && iBound >= 0){
+//				//TODO
+//			}
+//			// case 3: this positive, i negative
+//			if(tBound < 0 && iBound >= 0){
+//				//TODO
+//			}
+//			// case 4: both positive. AND values of intersection go up from 0 to this value
+//			if(tBound < 0 && iBound < 0){
+//				newBounds.add(0);
+//				// 0000 0111
+//				// 0001 0000
+//				// 0001 0000
+//				newBounds.add((1 << (Integer.numberOfLeadingZeros(Math.max(tBound, iBound)) + 1))
+//						+ ((1 << (Integer.numberOfLeadingZeros(Math.min(tBound, iBound)) + 1)) - 1));
+//				
+//			}
+//		}
+//	}
+//	if(newBounds.size() < 1){
+//		return TOP;
+//	}
+//	return handleOverflow(new Interval(Collections.min(newBounds), Collections.max(newBounds)));
+
 	
 //	1000 0000 -> -128 Integer.MIN_VALUE
 //	1000 0001 -> -127 
@@ -287,170 +408,141 @@ class Interval extends AbstractDomain {
 //	0000 1111
 //	
 
+//	0000 0011 ->    3  
+//	0000 0100 ->    4
+//	
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	
+//  & : [1,4]
+	
+	
 	/**
-	 * Transform an interval to the interval where the x-th bit is zeroed in all numbers.
+	 * Split an interval along the log2(k)-th bit (LSB is bit 1).
 	 * 
-	 * E.g. KillBit_int([13..21],4) = [0..15]
+	 * Returns a Pair of Intervals, the first being [l, k-1] and the second [k, u].
 	 * 
-	 * This returns interval that is obtained by (conceptually) executing c = c & ~(1 << k), for each of the concrete values c in Interval a.
-	 * E.g. c = 0000 1010, k = 3 ==> 0000 1010 & ~(0000 1000) ==> 0000 1010 & 1111 0111 
-	 *      ==> 0000 0010
-	 *
-	 * Ref: "John Regehr, Usit Duongsaa"
-	 *      "Deriving Abstract Transfer Functions for Analyzing Embedded Software"
-	 *      - http://www.cs.utah.edu/~regehr/papers/lctes06_2/fp019-regehr.pdf
+	 * E.g. A = [3,4] == [0011, 0100]
+	 *   
+	 *      split(A, 3) = {[3], [4]}
+	 *      
+	 * Note: This is similar to the KillBit function defined for the Bitwise domain, but more precise.  
 	 */
-	private Interval killBit(Interval a, int k){
-		long newLower;
-		long newUpper;
+	protected Pair<Interval, Interval> halve(int k){
+		Interval first = null;
+		if(this.lower <= k-1){
+			first = new Interval(this.lower, k-1);
+		}
+		Interval second = null;
+		if(k <= this.upper){
+			second = new Interval(k, this.upper);
+		}
+		return new Pair<Interval, Interval>(first, second);
+	}
+	protected Pair<Interval, Interval> halveBit(int k){
+		return halve(1 << k);
+	}
+	protected Interval asUnsigned(){
+		//conversion to unsigned long
+		long newLower = this.lower & 0xffffffff;
+		long newUpper = this.upper & 0xffffffff;
 		
-//		0000 1110 ->   14
-//		0000 1111 ->   15
-//		0001 0000 ->   16
-//		0001 0001 ->   17
-//		0001 0010 ->   18
-//		0001 0011 ->   19
-//		0001 0100 ->   20
-//		0001 0101 ->   21
+		if(newLower > newUpper){
+			//swap values
+			newLower = newLower ^ newUpper;
+			newUpper = newLower ^ newUpper;
+			newLower = newLower ^ newUpper;
+		}
 		
-		return a; //TODO implement this function
+		return new Interval(newLower, newUpper);
+	}
+	
+	public boolean containsValue(long v) {
+		return (v >= lower && v <= upper);
+	}
 
+	/**
+	 * Returns an array of k 32-1 intervals. Each interval represents the interval KillBit_int(v,k), where v is the the subinterval of this where the k-th bit is set to 1.
+	 * 
+	 * KillBit_int definition: Regehr, Duongsaa: "Deriving Abstract Transfer Functions for Analyzing Embedded Software"
+	 *                           url: http://www.cs.utah.edu/~regehr/papers/lctes06_2/fp019-regehr.pdf
+	 */
+	protected ArrayList<Interval> split(){
+		ArrayList<Interval> result = new ArrayList<Interval>(32);
+		//all unsigned operations, assume unsigned
+		for(int k = 0; k < 32; k++){
+			Interval partial = null;
+			long cursor = 1 << k;
+			if(this.containsValue(cursor)){
+				//cursor is start value, end is the largest value <= (1 << k) - 1
+				long start = cursor;
+				long end = cursor;
+				if(this.upper >= cursor-1){
+					end = cursor-1;
+				}else{
+					end = this.upper;
+				}
+				// all values between start and end have the k-th bit set. Thus:
+				start &= (1 << k);
+				end &= (1 << k);
+				//start is still guaranteed to be <= end
+				partial = new Interval(start, end);
+			}
+			result.add(k, partial);	
+		}
+		return result;
 	}
 	
-	/**
-	 * Run 
-	 */
-	private Interval killBitAndHigher(Interval a, int k){
-		return a; //TODO implement this function
-	}
-	
-	/**
-	 * If we can select any two numbers (one from each interval), what is the highest bit that both numbers have set to one?
-	 * E.g. 0000 1010
-	 *      000100110
-	 *      =========
-	 *      000000010
-	 */
-	private int highestCommonOneBit(Interval a, Interval b){
-//		int highestA = Integer.highestOneBit(a.upper);
-//		int highestB = Integer.highestOneBit(b.upper);
-		
-		return 0; //TODO implement this function
-	}
-	
-	/**
-	 * If we can select any two numbers (one from each interval), what is the lowest bit that at least one number has set to zero?
-	 * E.g. 0000 0010
-	 *      000100100
-	 *      =========
-	 *      000000100
-	 */
-	private int lowestZeroBit(Interval a, Interval b){
-//		int highestA = Integer.highestOneBit(a.upper);
-//		int highestB = Integer.highestOneBit(b.upper);
-		
-		return 0; //TODO implement this function
-	}
 	
 	public AbstractDomain and(AbstractDomain a) {
 		Interval i = (Interval) a;
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		ArrayList<Integer> candidates = new ArrayList<Integer>();
-		int newLower;
-		int newUpper;
-		
-		Interval thisCopy = (Interval) this.copy();
-		Interval iCopy = (Interval) i.copy();
-
-//		Basic strategy for &, upper: All bits that can be 1 in both
-//		- result = 0
-//		- while(true){
-//			- find highest common highestOneBit() in both ranges
-//		 	  -> we do not care about the less significant bits, as they will have less of an effect
-//			- if there is such a bit
-//				- set the bit on the result
-//				- discard all more significant bits and the bit itself in both ranges
-//			- else
-//				- return result
-		newUpper = 0;
-		int highestOneBit = 0;
-		while((highestOneBit = highestCommonOneBit(thisCopy, iCopy)) != 0){
-			newUpper |= highestOneBit;
-			thisCopy = killBitAndHigher(thisCopy, highestOneBit);
-			iCopy = killBitAndHigher(iCopy, highestOneBit);
-		}
-		candidates.add(newUpper);
-		
-		thisCopy = (Interval) this.copy();
-		iCopy = (Interval) i.copy();
-		
-		 /*     0000 0010
-		 *      000100100
-		 *      =========
-		 *      000000100
-		 */
-		
-//		Basic strategy for &, lower: All bits that can be 0 in one
-		newLower = 0;
-		int lowestZeroBit = 0;
-		while((lowestZeroBit = lowestZeroBit(thisCopy, iCopy)) != 0){
-			newLower &= ~lowestZeroBit; //set to 0
-			thisCopy = killBitAndHigher(thisCopy, lowestZeroBit);
-			iCopy = killBitAndHigher(iCopy, lowestZeroBit);
-		}
-		candidates.add(newLower);
-		
-		newLower = Collections.min(candidates);
-		newUpper = Collections.max(candidates);
-		return handleOverflow(new Interval(newLower, newUpper));
+//		ArrayList<Integer> candidates = new ArrayList<Integer>();
+//		int newLower;
+//		int newUpper;
+//		
+////		0000 0011 ->    3  
+////		0000 0100 ->    4
+////	
+////		0000 0101 ->    5
+////		0000 0110 ->    6
+////	
+////  & : [1,4]
+//		
+////		0000 0011 ->    3  
+////		0000 0100 ->    4
+////	
+////		0000 1001 ->    9
+////		0000 1010 ->   10
+//		
+//		ArrayList<Interval> thisIntervals = new ArrayList<Interval>();
+//		ArrayList<Interval> iIntervals = new ArrayList<Interval>();
+//		
+//		// UPPER
+//		// the maximum number of bits that can be set to one
+//		
+//		int thisHighestOneBit = Integer.highestOneBit(thisUpper);
+//		int iHighestOneBit = Integer.highestOneBit(iUpper);
+//		
+//		
+//		
+//		
+//		int highestCommonOneBit = Math.min(Integer.highestOneBit((int) this.upper), Integer.highestOneBit((int) i.upper));
+//		
+//		
+//		
+//		newLower = Collections.min(candidates);
+//		newUpper = Collections.max(candidates);
+//		return handleOverflow(new Interval(newLower, newUpper));
+		return TOP.copy();
 
 	}
 
 	public AbstractDomain or(AbstractDomain a) {
 		return TOP.copy();
-//		Interval i = (Interval) a;
-//
-//		List<Integer> newBounds = new ArrayList<Integer>();
-//		long[] thisBounds = {this.lower, this.upper};
-//		long[] iBounds = {i.lower, i.upper};
-//
-//		// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
-//		// 1: -/+ -> intersection = [0,0]
-//		// 2: +/- -> intersection = [0,0]
-//		// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
-//		
-//		for(long tBound : thisBounds){
-//			for(long iBound : iBounds){
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound)))+1) - 1));
-//					newBounds.add(-1);
-//				}
-//				// case 2: this negative, i positive
-//				if(tBound < 0 && iBound >= 0){
-//					//TODO
-//				}
-//				// case 3: this positive, i negative
-//				if(tBound < 0 && iBound >= 0){
-//					//TODO
-//				}
-//				// case 4: both positive. AND values of intersection go up from 0 to this value
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(0);
-//					// 0000 0111
-//					// 0001 0000
-//					// 0001 0000
-//					newBounds.add((1 << (Integer.numberOfLeadingZeros(Math.max(tBound, iBound)) + 1))
-//							+ ((1 << (Integer.numberOfLeadingZeros(Math.min(tBound, iBound)) + 1)) - 1));
-//					
-//				}
-//			}
-//		}
-//		if(newBounds.size() < 1){
-//			return TOP;
-//		}
-//		return handleOverflow(new Interval(Collections.min(newBounds), Collections.max(newBounds)));
+
 	}
 
 	public AbstractDomain xor(AbstractDomain a) {
