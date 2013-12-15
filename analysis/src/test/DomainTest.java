@@ -3,6 +3,9 @@ package test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,7 +72,38 @@ public class DomainTest {
 		assertEquals(new Domain(-1, 1), new Domain(-1, 1).multiply(new Domain(1, 1)));
 		assertEquals(new Domain(1, 1), new Domain(-1, -1).multiply(new Domain(-1, -1)));
 	}
-
+	
+	@Test
+	public void testBitwiseAndSoundness(){
+		//test all 4-bit integers
+		ArrayList<Domain> testObjs = new ArrayList<Domain>();
+		for(int l = -16; l < 16; l++){
+			for(int u = l; l < 16; l++){
+				testObjs.add(new Domain(l,u));
+			}
+		}
+		Iterator<Domain> i1 = testObjs.iterator();
+		Iterator<Domain> i2 = testObjs.iterator();
+		while(i1.hasNext()){
+			Domain a = i1.next();
+			while(i2.hasNext()){
+				Domain b = i2.next();
+				//16*16 combinations
+				AbstractDomain r = a.copy().and(b.copy());
+				int aStart = a.getLower();
+				int aEnd = a.getUpper();
+				int bStart =  b.getLower();
+				int bEnd = b.getUpper();
+				for(int aVal = aStart; aVal <= aEnd; aVal++){
+					for(int bVal = bStart; bVal <= bEnd; bVal++){
+						int rVal = aVal & bVal;
+						assertTrue(r.contains(new Domain(rVal)));
+					}
+				}
+			}
+		}
+	}
+	
 	@Test
 	public void testJoin() {
 		assertEquals(new Domain(1, 1), new Domain(1, 1).join(new Domain(1, 1)));

@@ -16,5 +16,13 @@ public final class Domain extends Interval {
 	public Domain(int i, int j) {
 		super(i, j);
 	}
+	
+	public int getLower(){
+		return (int) lower;
+	}
+	
+	public int getUpper(){
+		return (int) upper;
+	}
 
 }

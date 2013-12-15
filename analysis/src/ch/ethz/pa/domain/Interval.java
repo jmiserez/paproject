@@ -322,7 +322,7 @@ class Interval extends AbstractDomain {
 		
 		ArrayList<Interval> thisSplit = this.split();
 		ArrayList<Interval> iSplit = i.split();
-		long currentBestUpper = 0;
+		long currentBestUpper = 0x00000000; //to show intention
 		
 		while(true){
 			int highestCommonOneBit = -1;
@@ -349,7 +349,10 @@ class Interval extends AbstractDomain {
 		}
 		//have upper
 		
-		return TOP.copy(); //TODO implement
+		long currentBestLower = Integer.MIN_VALUE;// 0xffffffff;
+		//TODO: just the other way around
+		
+		return handleOverflow(new Interval(currentBestLower, currentBestUpper));
 
 	}
 
