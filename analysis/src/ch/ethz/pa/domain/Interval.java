@@ -1,5 +1,6 @@
 package ch.ethz.pa.domain;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -216,98 +217,62 @@ class Interval extends AbstractDomain {
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
+	
 	/**
-	 * Split an interval along the log2(k)-th bit (LSB is bit 1).
+	 * Transpose the interval to a completely signed range by adding Integer.MIN_VALUE
 	 * 
-	 * Returns a Pair of Intervals, the first being [l, k-1] and the second [k, u].
+	 * This allows us to treat it as an unsigned long as far as all bit operations are concerned and transpose it back once we've done the bitwise operations.
 	 * 
-	 * E.g. A = [3,4] == [0011, 0100]
-	 *   
-	 *      split(A, 3) = {[3], [4]}
-	 *      
-	 * Note: This is similar to the KillBit function defined for the Bitwise domain, but more precise.  
+	 * The old range: [0xffff ffff 8000 0000, 0x7fff ffff ffff ffff] (64bit signed int)
+	 * The new range: [0x0000 0000 0000 0000, 0xffff ffff ffff ffff] (65+bit signed BigInteger)
+	 * 
+	 * @return
 	 */
-	protected Pair<Interval, Interval> halve(int k){
-		Interval first = null;
-		if(this.lower <= k-1){
-			first = new Interval(this.lower, k-1);
-		}
-		Interval second = null;
-		if(k <= this.upper){
-			second = new Interval(k, this.upper);
-		}
-		return new Pair<Interval, Interval>(first, second);
-	}
-	protected Pair<Interval, Interval> halveBit(int k){
-		return halve(1 << k);
-	}
-	protected Interval asUnsigned(){
-		//conversion to unsigned long
-		long newLower = this.lower & 0xffffffff;
-		long newUpper = this.upper & 0xffffffff;
+	protected Pair<BigInteger, BigInteger> transposeToUnsignedBigInt(){
+		//transpose the Interval by Integer.MIN_VALUE
 		
-		if(newLower > newUpper){
-			//swap values
-			newLower = newLower ^ newUpper;
-			newUpper = newLower ^ newUpper;
-			newLower = newLower ^ newUpper;
-		}
-		
-		return new Interval(newLower, newUpper);
+		BigInteger newLower = new BigInteger(String.valueOf(this.lower)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
+		BigInteger newUpper = new BigInteger(String.valueOf(this.upper)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
+		return new Pair<BigInteger, BigInteger>(newLower, newUpper);
 	}
 	
-	protected Interval asSigned(){
-		//conversion to signed long (from unsigned long). Only considers the least significat 32 bits.
-		long newLower = this.lower;
-		long newUpper = this.upper;
+	protected static Interval transposeFromUnsignedBigInt(Pair<BigInteger, BigInteger> bigInterval){
+		//transpose the Interval by Integer.MIN_VALUE
 		
-		if((newLower & 0x80000000) != 0){
-			newLower |= 0xffffffff00000000L;
-		}
-		if((newUpper & 0x80000000) != 0){
-			newUpper |= 0xffffffff00000000L;
-		}
-		
-		if(newLower > newUpper){
-			//swap values
-			newLower = newLower ^ newUpper;
-			newUpper = newLower ^ newUpper;
-			newLower = newLower ^ newUpper;
-		}
+		long newLower = bigInterval.getO1().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE))).longValue();
+		long newUpper = bigInterval.getO2().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE))).longValue();
 		
 		return new Interval(newLower, newUpper);
-	}
-	
-	public boolean containsValue(long v) {
-		return (v >= lower && v <= upper);
 	}
 
 	/**
-	 * Returns an array of k 32-1 intervals. Each interval represents the interval KillBit_int(v,k), where v is the the subinterval of this where the k-th bit is set to 1.
+	 * Returns an array of k 32-1 big intervals. Each big interval represents the interval KillBit_int(v,k), where v is the the subinterval of this where the k-th bit is set to 1.
 	 * 
 	 * KillBit_int definition: Regehr, Duongsaa: "Deriving Abstract Transfer Functions for Analyzing Embedded Software"
 	 *                           url: http://www.cs.utah.edu/~regehr/papers/lctes06_2/fp019-regehr.pdf
 	 */
-	protected ArrayList<Interval> split(){
-		ArrayList<Interval> result = new ArrayList<Interval>(32);
+	protected static ArrayList<Pair<BigInteger, BigInteger>> split(Pair<BigInteger, BigInteger> bigInterval){
+		BigInteger bigLower = bigInterval.getO1();
+		BigInteger bigUpper = bigInterval.getO2();
+		ArrayList<Pair<BigInteger, BigInteger>> result = new ArrayList<Pair<BigInteger, BigInteger>>(32);
 		//all unsigned operations, assume unsigned
 		for(int k = 0; k < 32; k++){
-			Interval partial = null;
-			long cursor = 1 << k;
-			if(this.containsValue(cursor)){
+			Pair<BigInteger, BigInteger> partial = null;
+			BigInteger cursor = new BigInteger("1").shiftLeft(k);
+			if(cursor.compareTo(bigLower) >= 0 && cursor.compareTo(bigUpper) <= 0){ // idiom compareTo: c.compareTo(y) (op) 0
 				//cursor is start value, end is the largest value <= (1 << k) - 1
-				long start = cursor;
-				long end = cursor;
-				if(this.upper >= cursor-1){
-					end = cursor-1;
+				BigInteger start = cursor;
+				BigInteger end = cursor;
+				if(bigUpper.compareTo(cursor.subtract(new BigInteger("1"))) >= 0){
+					end = cursor.subtract(new BigInteger("1"));
 				}else{
-					end = this.upper;
+					end = bigUpper;
 				}
 				// all values between start and end have the k-th bit set. Thus:
-				start &= (1 << k);
-				end &= (1 << k);
+				start = start.and(new BigInteger("1").shiftLeft(k));
+				end = end.and(new BigInteger("1").shiftLeft(k));
 				//start is still guaranteed to be <= end
-				partial = new Interval(start, end);
+				partial = new Pair<BigInteger, BigInteger>(start,end);
 			}
 			result.add(k, partial);	
 		}
@@ -320,9 +285,12 @@ class Interval extends AbstractDomain {
 			return TOP.copy();
 		}
 		
-		ArrayList<Interval> thisSplit = this.split();
-		ArrayList<Interval> iSplit = i.split();
-		long currentBestUpper = 0x00000000; //to show intention
+		Pair<BigInteger, BigInteger> thisBig = this.transposeToUnsignedBigInt();
+		Pair<BigInteger, BigInteger> iBig = i.transposeToUnsignedBigInt();
+		
+		ArrayList<Pair<BigInteger, BigInteger>> thisSplit = split(thisBig);
+		ArrayList<Pair<BigInteger, BigInteger>> iSplit = split(iBig);
+		BigInteger currentBestUpper = new BigInteger("0");
 		
 		while(true){
 			int highestCommonOneBit = -1;
@@ -335,13 +303,13 @@ class Interval extends AbstractDomain {
 				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
 				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
 				
-				currentBestUpper |= (1 << highestCommonOneBit);
+				currentBestUpper = currentBestUpper.or(new BigInteger("1").shiftRight(highestCommonOneBit));
 				
-				Interval newThis = thisSplit.get(highestCommonOneBit);
-				Interval newI = iSplit.get(highestCommonOneBit);
+				Pair<BigInteger, BigInteger> newThis = thisSplit.get(highestCommonOneBit);
+				Pair<BigInteger, BigInteger> newI = iSplit.get(highestCommonOneBit);
 				
-				thisSplit = newThis.split();
-				iSplit = newI.split();
+				thisSplit = split(newThis);
+				iSplit = split(newI);
 			} else {
 				// absolutely no parts of any of the ranges have a bit set at the same position
 				break;
@@ -349,11 +317,15 @@ class Interval extends AbstractDomain {
 		}
 		//have upper
 		
-		long currentBestLower = Integer.MIN_VALUE;// 0xffffffff;
+		BigInteger currentBestLower = new BigInteger(String.valueOf(Integer.MAX_VALUE)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
+
 		//TODO: just the other way around
 		
-		return handleOverflow(new Interval(currentBestLower, currentBestUpper));
-
+		
+		
+		
+		Interval result = transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
+		return handleOverflow(result);
 	}
 
 	public AbstractDomain or(AbstractDomain a) {
