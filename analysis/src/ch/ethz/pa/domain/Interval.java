@@ -256,6 +256,28 @@ class Interval extends AbstractDomain {
 		return new Interval(newLower, newUpper);
 	}
 	
+	protected Interval asSigned(){
+		//conversion to signed long (from unsigned long). Only considers the least significat 32 bits.
+		long newLower = this.lower;
+		long newUpper = this.upper;
+		
+		if((newLower & 0x80000000) != 0){
+			newLower |= 0xffffffff00000000L;
+		}
+		if((newUpper & 0x80000000) != 0){
+			newUpper |= 0xffffffff00000000L;
+		}
+		
+		if(newLower > newUpper){
+			//swap values
+			newLower = newLower ^ newUpper;
+			newUpper = newLower ^ newUpper;
+			newLower = newLower ^ newUpper;
+		}
+		
+		return new Interval(newLower, newUpper);
+	}
+	
 	public boolean containsValue(long v) {
 		return (v >= lower && v <= upper);
 	}
@@ -298,6 +320,23 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		
+		ArrayList<Interval> thisSplit = this.split();
+		ArrayList<Interval> iSplit = i.split();
+		
+		int highestCommonOneBit = -1;
+		for(int k = 0; k < 32; k++){
+			if(thisSplit.get(k) != null && iSplit.get(k) != null){
+				highestCommonOneBit = k;
+			}
+		}
+		if(highestCommonOneBit >= 0){
+			//TODO: fill in, and put a while loop around everything
+		} else {
+			// absolutely no parts of any of the ranges have a bit set at the same position
+			return new Interval(0);
+		}
+		
 		return TOP.copy(); //TODO implement
 
 	}
