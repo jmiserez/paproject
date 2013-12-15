@@ -103,7 +103,21 @@ public class RealTests {
 		String result = verify("TestSimpleGen11_379_at_testM_NegativeAboveEnd_7");
 		assertEquals(result, "Program is SAFE\n", result);
 	}
-	
+
+	// Loop
+	@Test
+	public void TestSoundBranch1_315_at_testBranch4_Fixed() {
+		String result = verify("TestSoundBranch1_315_at_testBranch4_Fixed");
+		assertEquals(result, "Program is UNSAFE\n", result);
+	}
+
+	// Loop
+	@Test
+	public void TestSoundBranch1_316_at_testBranch5_Fixed() {
+		String result = verify("TestSoundBranch1_316_at_testBranch5_Fixed");
+		assertEquals(result, "Program is UNSAFE\n", result);
+	}
+
 	private String verify(String className){
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream myOut = new ByteArrayOutputStream();
