@@ -322,7 +322,7 @@ class Interval extends AbstractDomain {
 		
 		ArrayList<Interval> thisSplit = this.split();
 		ArrayList<Interval> iSplit = i.split();
-		Interval currentBestResult = new Interval(0);
+		long currentBestUpper = 0;
 		
 		while(true){
 			int highestCommonOneBit = -1;
@@ -335,11 +335,10 @@ class Interval extends AbstractDomain {
 				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
 				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
 				
-				currentBestResult |= (1 << highestCommonOneBit);
+				currentBestUpper |= (1 << highestCommonOneBit);
 				
 				Interval newThis = thisSplit.get(highestCommonOneBit);
 				Interval newI = iSplit.get(highestCommonOneBit);
-				
 				
 				thisSplit = newThis.split();
 				iSplit = newI.split();
