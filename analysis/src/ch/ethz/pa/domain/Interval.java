@@ -344,9 +344,10 @@ class Interval extends AbstractDomain {
 				iSplit = newI.split();
 			} else {
 				// absolutely no parts of any of the ranges have a bit set at the same position
-				return currentBestResult;
+				break;
 			}
 		}
+		//have upper
 		
 		return TOP.copy(); //TODO implement
 
