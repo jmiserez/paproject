@@ -216,207 +216,6 @@ class Interval extends AbstractDomain {
 		return handleOverflow(new Interval(newLower, newUpper));
 	}
 	
-//	/**
-//	 * If we can select any two numbers (one from each interval), what is the highest bit that both numbers have set to one?
-//	 * E.g. 0000 1010
-//	 *      000100110
-//	 *      =========
-//	 *      000000010
-//	 */
-//	private int highestCommonOneBit(Interval a, Interval b){
-////		int highestA = Integer.highestOneBit(a.upper);
-////		int highestB = Integer.highestOneBit(b.upper);
-////		
-////		for(int i = 31; i >= 0; i--){
-////			
-////		}
-////		
-//		return 0; //TODO implement this function
-//	}
-//	
-//	/**
-//	 * If we can select any two numbers (one from each interval), what is the lowest bit that at least one number has set to zero?
-//	 * E.g. 0000 0010
-//	 *      000100100
-//	 *      =========
-//	 *      000000100
-//	 */
-//	private int lowestZeroBit(Interval a, Interval b){
-////		int highestA = Integer.highestOneBit(a.upper);
-////		int highestB = Integer.highestOneBit(b.upper);
-//		
-//		return 0; //TODO implement this function
-//	}
-	
-//	Interval thisCopy = (Interval) this.copy();
-//	Interval iCopy = (Interval) i.copy();
-//
-////	Basic strategy for &, upper: All bits that can be 1 in exactly both of the ranges
-////	- result = 0
-////	- while(true){
-////		- find highest common highestOneBit() in both ranges
-////	 	  -> we do not care about the less significant bits, as they will have less of an effect
-////		- if there is such a bit
-////			- set the bit on the result
-////			- discard all more significant bits and the bit itself in both ranges
-////		- else
-////			- return result
-//	newUpper = 0;
-//	int highestOneBit = 0;
-//	while((highestOneBit = highestCommonOneBit(thisCopy, iCopy)) != 0){
-//		newUpper |= highestOneBit;
-//		thisCopy = killGeqBits(thisCopy, highestOneBit);
-//		iCopy = killGeqBits(iCopy, highestOneBit);
-//	}
-//	candidates.add(newUpper);
-//	
-//	thisCopy = (Interval) this.copy();
-//	iCopy = (Interval) i.copy();
-//	
-//	 /*     0000 0010
-//	 *      0001 0100
-//	 *      =========
-//	 *      0000 0100
-//	 *      ---------
-//	 *      0000 0010
-//	 *      0000 0000
-//	 *      =========
-//	 */
-//	
-////	Basic strategy for &, lower: All bits that can be 0 in at least one of the ranges
-//	newLower = 0;
-//	int lowestZeroBit = -1; // ones
-//	int prevZeroBit;
-//	do {
-//		prevZeroBit = lowestZeroBit;
-//		lowestZeroBit = lowestZeroBit(thisCopy, iCopy);
-//		newLower &= ~lowestZeroBit; //set to 0
-//		thisCopy = killGeqBits(thisCopy, lowestZeroBit);
-//		iCopy = killGeqBits(iCopy, lowestZeroBit);
-//	} while(prevZeroBit != lowestZeroBit);
-//	candidates.add(newLower);
-	
-//	Interval i = (Interval) a;
-//
-//	List<Integer> newBounds = new ArrayList<Integer>();
-//	long[] thisBounds = {this.lower, this.upper};
-//	long[] iBounds = {i.lower, i.upper};
-//
-//	// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
-//	// 1: -/+ -> intersection = [0,0]
-//	// 2: +/- -> intersection = [0,0]
-//	// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
-//	
-//	for(long tBound : thisBounds){
-//		for(long iBound : iBounds){
-//			if(tBound < 0 && iBound < 0){
-//				newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound)))+1) - 1));
-//				newBounds.add(-1);
-//			}
-//			// case 2: this negative, i positive
-//			if(tBound < 0 && iBound >= 0){
-//				//TODO
-//			}
-//			// case 3: this positive, i negative
-//			if(tBound < 0 && iBound >= 0){
-//				//TODO
-//			}
-//			// case 4: both positive. AND values of intersection go up from 0 to this value
-//			if(tBound < 0 && iBound < 0){
-//				newBounds.add(0);
-//				// 0000 0111
-//				// 0001 0000
-//				// 0001 0000
-//				newBounds.add((1 << (Integer.numberOfLeadingZeros(Math.max(tBound, iBound)) + 1))
-//						+ ((1 << (Integer.numberOfLeadingZeros(Math.min(tBound, iBound)) + 1)) - 1));
-//				
-//			}
-//		}
-//	}
-//	if(newBounds.size() < 1){
-//		return TOP;
-//	}
-//	return handleOverflow(new Interval(Collections.min(newBounds), Collections.max(newBounds)));
-
-	
-//	1000 0000 -> -128 Integer.MIN_VALUE
-//	1000 0001 -> -127 
-//	1000 0010 -> -126 
-//	1111 0000 ->  -16
-//	
-//	1111 0001 ->  -15
-//	1111 0010 ->  -14
-//	1111 0011 ->  -13
-//	1111 0100 ->  -12
-//	1111 0101 ->  -11
-//	1111 0110 ->  -10
-//	1111 0111 ->   -9
-//	1111 1000 ->   -8
-//	1111 1001 ->   -7
-//	1111 1010 ->   -6
-//	1111 1011 ->   -5
-//	1111 1100 ->   -4
-//	1111 1101 ->   -3
-//	1111 1110 ->   -2
-//	1111 1111 ->   -1
-//	
-//	0000 0000 ->    0
-//	0000 0001 ->    1
-//	0000 0010 ->    2
-//	0000 0011 ->    3
-//	0000 0100 ->    4
-//	0000 0101 ->    5
-//	0000 0110 ->    6
-//	0000 0111 ->    7
-//	0000 1000 ->    8
-//	0000 1001 ->    9
-//	0000 1010 ->   10
-//	0000 1011 ->   11
-//	0000 1100 ->   12
-//	0000 1101 ->   13
-//	0000 1110 ->   14
-//	0000 1111 ->   15
-//	0001 0000 ->   16
-//
-//	0111 1100 ->  124
-//	0111 1101 ->  125
-//	0111 1110 ->  126
-//	0111 1111 ->  127 Integer.MAX_VALUE
-	
-// Examples:
-//	[3,7] & [7,11]
-//	[3,7] | [7,11]
-//	0000 0011 ->    3
-//	0000 0100 ->    4
-//	0000 0101 ->    5
-//	0000 0110 ->    6
-//	0000 0111 ->    7
-//	
-//	0000 0111 ->    7
-//	0000 1000 ->    8
-//	0000 1001 ->    9
-//	0000 1010 ->   10
-//	0000 1011 ->   11
-//	
-//	& lower: 3 & 8 = 0
-//	0000 0000
-//	& upper: 7 & 7 = 7
-//	0000 0111
-//	| lower: 3 | 7 = 7
-//	0000 0111
-//	| upper: 7 | 11 = 15
-//	0000 1111
-//	
-
-//	0000 0011 ->    3  
-//	0000 0100 ->    4
-//	
-//	0000 0101 ->    5
-//	0000 0110 ->    6
-//	
-//  & : [1,4]
-	
-	
 	/**
 	 * Split an interval along the log2(k)-th bit (LSB is bit 1).
 	 * 
@@ -499,53 +298,24 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-//		ArrayList<Integer> candidates = new ArrayList<Integer>();
-//		int newLower;
-//		int newUpper;
-//		
-////		0000 0011 ->    3  
-////		0000 0100 ->    4
-////	
-////		0000 0101 ->    5
-////		0000 0110 ->    6
-////	
-////  & : [1,4]
-//		
-////		0000 0011 ->    3  
-////		0000 0100 ->    4
-////	
-////		0000 1001 ->    9
-////		0000 1010 ->   10
-//		
-//		ArrayList<Interval> thisIntervals = new ArrayList<Interval>();
-//		ArrayList<Interval> iIntervals = new ArrayList<Interval>();
-//		
-//		// UPPER
-//		// the maximum number of bits that can be set to one
-//		
-//		int thisHighestOneBit = Integer.highestOneBit(thisUpper);
-//		int iHighestOneBit = Integer.highestOneBit(iUpper);
-//		
-//		
-//		
-//		
-//		int highestCommonOneBit = Math.min(Integer.highestOneBit((int) this.upper), Integer.highestOneBit((int) i.upper));
-//		
-//		
-//		
-//		newLower = Collections.min(candidates);
-//		newUpper = Collections.max(candidates);
-//		return handleOverflow(new Interval(newLower, newUpper));
-		return TOP.copy();
+		return TOP.copy(); //TODO implement
 
 	}
 
 	public AbstractDomain or(AbstractDomain a) {
-		return TOP.copy();
+		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		return TOP.copy(); //TODO implement
 
 	}
 
 	public AbstractDomain xor(AbstractDomain a) {
+		Interval i = (Interval) a;
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
 		return TOP.copy(); //TODO implement
 	}
 	
@@ -740,5 +510,52 @@ class Interval extends AbstractDomain {
 		Interval result = (Interval) this.copy();
 		return TOP.copy();
 	}
+	
+/*	
+ *  Some binary values
+   
+    1000 0000 -> -128 Integer.MIN_VALUE
+	1000 0001 -> -127 
+	1000 0010 -> -126 
+	1111 0000 ->  -16
+	
+	1111 0001 ->  -15
+	1111 0010 ->  -14
+	1111 0011 ->  -13
+	1111 0100 ->  -12
+	1111 0101 ->  -11
+	1111 0110 ->  -10
+	1111 0111 ->   -9
+	1111 1000 ->   -8
+	1111 1001 ->   -7
+	1111 1010 ->   -6
+	1111 1011 ->   -5
+	1111 1100 ->   -4
+	1111 1101 ->   -3
+	1111 1110 ->   -2
+	1111 1111 ->   -1
+	
+	0000 0000 ->    0
+	0000 0001 ->    1
+	0000 0010 ->    2
+	0000 0011 ->    3
+	0000 0100 ->    4
+	0000 0101 ->    5
+	0000 0110 ->    6
+	0000 0111 ->    7
+	0000 1000 ->    8
+	0000 1001 ->    9
+	0000 1010 ->   10
+	0000 1011 ->   11
+	0000 1100 ->   12
+	0000 1101 ->   13
+	0000 1110 ->   14
+	0000 1111 ->   15
+	0001 0000 ->   16
+
+	0111 1100 ->  124
+	0111 1101 ->  125
+	0111 1110 ->  126
+	0111 1111 ->  127 Integer.MAX_VALUE*/
 
 }
