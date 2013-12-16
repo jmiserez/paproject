@@ -74,37 +74,78 @@ public class DomainTest {
 	}
 	
 	@Test
-	public void testBitwiseAndSoundness(){
+	public void testBitwiseSoundnessAnd(){
+		testBitwiseSoundness(1);
+	}
+	@Test
+	public void testBitwiseSoundnessOr(){
+		testBitwiseSoundness(2);
+	}
+	@Test
+	public void testBitwiseSoundnessXor(){
+		testBitwiseSoundness(3);
+	}
+
+	private void testBitwiseSoundness(int op){
 		//test all 8-bit integers
-		ArrayList<Domain> testObjs = new ArrayList<Domain>();
-		int max = (1 << 8) - 1;
-		int min = (1 << 8) * -1;
-		for(int l = min; l <= max; l++){
-			for(int u = min; l <= max; l++){
-				testObjs.add(new Domain(l,u));
-			}
-		}
-		Iterator<Domain> i1 = testObjs.iterator();
-		Iterator<Domain> i2 = testObjs.iterator();
+		ArrayList<Domain> testObjs1 = new ArrayList<Domain>();
+		ArrayList<Domain> testObjs2 = new ArrayList<Domain>();
+//		int max = (1 << 8) - 1;
+//		int min = (1 << 8) * -1;
+//		for(int l = min; l <= max; l++){
+//			for(int u = min; l <= max; l++){
+//				testObjs.add(new Domain(l,u));
+//			}
+//		}
+		testObjs1.add(new Domain(3,3));
+		testObjs2.add(new Domain(3,3));
+
+		Iterator<Domain> i1 = testObjs1.iterator();
+		Iterator<Domain> i2 = testObjs2.iterator();
 		while(i1.hasNext()){
 			Domain a = i1.next();
 			while(i2.hasNext()){
 				Domain b = i2.next();
 				//16*16 combinations
-				AbstractDomain r = a.copy().and(b.copy());
+				AbstractDomain r = null;
+				switch(op){
+				case 1:
+					r = a.copy().and(b.copy());
+					break;
+				case 2:
+					r = a.copy().or(b.copy());
+					break;
+				case 3:
+					r = a.copy().xor(b.copy());
+					break;
+				}
 				int aStart = a.getLower();
 				int aEnd = a.getUpper();
 				int bStart =  b.getLower();
 				int bEnd = b.getUpper();
 				for(int aVal = aStart; aVal <= aEnd; aVal++){
 					for(int bVal = bStart; bVal <= bEnd; bVal++){
-						int rVal = aVal & bVal;
+						int rVal = 0;
+						switch(op){
+						case 1:
+							rVal = aVal & bVal;
+							break;
+						case 2:
+							rVal = aVal | bVal;
+							break;
+						case 3:
+							rVal = aVal ^ bVal;
+							break;
+						}
+						System.out.println(aVal+" & "+bVal+" = "+r+" ("+rVal+")");
 						assertTrue(r.contains(new Domain(rVal)));
 					}
 				}
 			}
 		}
 	}
+	
+	
 	
 	@Test
 	public void testJoin() {

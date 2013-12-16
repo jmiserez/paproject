@@ -236,16 +236,16 @@ class Interval extends AbstractDomain {
 	protected Pair<BigInteger, BigInteger> transposeToUnsignedBigInt(){
 		//transpose the Interval by Integer.MIN_VALUE
 		
-		BigInteger newLower = new BigInteger(String.valueOf(this.lower)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
-		BigInteger newUpper = new BigInteger(String.valueOf(this.upper)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
+		BigInteger newLower = new BigInteger(String.valueOf(this.lower)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
+		BigInteger newUpper = new BigInteger(String.valueOf(this.upper)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
 		return new Pair<BigInteger, BigInteger>(newLower, newUpper);
 	}
 	
 	protected static Interval transposeFromUnsignedBigInt(Pair<BigInteger, BigInteger> bigInterval){
 		//transpose the Interval by Integer.MIN_VALUE
 		
-		long newLower = bigInterval.getO1().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE))).longValue();
-		long newUpper = bigInterval.getO2().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE))).longValue();
+		long newLower = bigInterval.getO1().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate()).longValue();
+		long newUpper = bigInterval.getO2().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate()).longValue();
 		
 		return new Interval(newLower, newUpper);
 	}
@@ -261,48 +261,68 @@ class Interval extends AbstractDomain {
 		BigInteger bigUpper = bigInterval.getO2();
 		HashMap<Integer, Pair<BigInteger, BigInteger>> result = new HashMap<Integer, Pair<BigInteger, BigInteger>>(32);
 		//all unsigned operations, assume unsigned
-		for(int k = 0; k < 32; k++){
+		for(int k = 31; k >= 0; k--){
 			Pair<BigInteger, BigInteger> partial = null;
-			BigInteger cursor = new BigInteger("1").shiftLeft(k);
-			if(cursor.compareTo(bigLower) >= 0 && cursor.compareTo(bigUpper) <= 0){ // idiom compareTo: c.compareTo(y) (op) 0
-				//cursor is start value, end is the largest value <= (1 << k) - 1
-				BigInteger start = cursor;
-				BigInteger end = cursor;
-				if(bigUpper.compareTo(cursor.subtract(new BigInteger("1"))) >= 0){
-					end = cursor.subtract(new BigInteger("1"));
-				}else{
-					end = bigUpper;
-				}
-				// all values between start and end have the k-th bit set. Thus:
-				start = start.and(new BigInteger("1").shiftLeft(k));
-				end = end.and(new BigInteger("1").shiftLeft(k));
-				//start is still guaranteed to be <= end
-				partial = new Pair<BigInteger, BigInteger>(start,end);
+			
+			//
+			//  0000 0000
+			//  0000 1000
+			//  0010 0000
+			//  0010 1100
+			//  0011 1111
+			//
+			
+			BigInteger cursorStart = new BigInteger("1").shiftLeft(k);
+			BigInteger cursorEnd = new BigInteger("1").shiftLeft(k+1).subtract(new BigInteger("1"));
+			//are there any numbers in this range
+			
+			//         [               ]
+			//      |                     |
+			//      |        |
+			//            |          |
+			//                  |            |
+			//
+			if(bigLower.compareTo(cursorStart) <= 0 && bigLower.compareTo(cursorEnd) >= 0){
+				partial = new Pair<BigInteger, BigInteger>(cursorStart, cursorEnd);
+			} else if(bigLower.compareTo(cursorStart) <= 0 && bigUpper.compareTo(cursorStart) >= 0 && bigUpper.compareTo(cursorEnd) <= 0 ){
+				partial = new Pair<BigInteger, BigInteger>(cursorStart, bigUpper);
+			} else if(bigLower.compareTo(cursorStart) >= 0 && bigLower.compareTo(cursorEnd) <= 0 && bigUpper.compareTo(cursorStart) >= 0 && bigUpper.compareTo(cursorEnd) <= 0 ){
+				partial = new Pair<BigInteger, BigInteger>(bigLower, bigUpper);
+			} else if(bigLower.compareTo(cursorStart) >= 0 && bigLower.compareTo(cursorEnd) <= 0 && bigUpper.compareTo(cursorEnd) >= 0){
+				partial = new Pair<BigInteger, BigInteger>(bigLower, cursorEnd);
+			}
+			if(partial != null){
+				BigInteger p1 = partial.getO1().andNot(new BigInteger("1").shiftLeft(k));
+				BigInteger p2 = partial.getO2().andNot(new BigInteger("1").shiftLeft(k));
+				partial.setO1(p1);
+				partial.setO2(p2);
 			}
 			result.put(k, partial);	
 		}
 		return result;
 	}
 	
-	private static <T> List<T> nonNullEntries(List<T> list){
+	private static <T> ArrayList<T> nonNullEntries(List<T> list){
 		ArrayList<T> result = new ArrayList<T>();
 		for(T elem : list){
 			if(elem != null){
 				result.add(elem);
 			}
 		}
-		return list;
+		return result;
 	}
 	
 	/**
 	 * This is the actual KillBit_int(v,k) function. This function assumes that the MSB bit of both lower and upper is k, thus the range is bounded by this bit k.
 	 */
 	private static void killBitSubrange(ArrayList<Pair<BigInteger, BigInteger>> killBitRanges, int k , HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> splitListToAddTo){
-		for(Pair<BigInteger, BigInteger> elem : killBitRanges){
+		ArrayList<Pair<BigInteger, BigInteger>> cloneList = new ArrayList<Pair<BigInteger,BigInteger>>(killBitRanges);
+		for(Pair<BigInteger, BigInteger> elem : cloneList){
 			if(elem != null){
 				BigInteger elemLower = elem.getO1().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
 				BigInteger elemUpper = elem.getO2().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
 				
+				splitListToAddTo.remove(elem);
 				HashMap<Integer, Pair<BigInteger, BigInteger>> currentSplit = split(new Pair<BigInteger, BigInteger>(elemLower, elemUpper));
 				for(int m = 0; m < 32; m++){
 					splitListToAddTo.get(m).add(currentSplit.get(m));
@@ -393,15 +413,24 @@ class Interval extends AbstractDomain {
 				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
 				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
 				
-				currentBestUpper = currentBestUpper.or(new BigInteger("1").shiftRight(highestCommonOneBit));
-			} else {
-				// absolutely no parts of any of the ranges have a bit set at the same position
-				break;
+				currentBestUpper = currentBestUpper.or(new BigInteger("1").shiftLeft(highestCommonOneBit));
 			}
 		}
 		//have upper
 		
-		BigInteger currentBestLower = new BigInteger(String.valueOf(Integer.MAX_VALUE)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)));
+		//reset lists
+		thisSplitList.clear();
+		iSplitList.clear();
+		for(int k = 0; k < 32; k++){
+			thisSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
+			iSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
+		}
+		for(int k = 0; k < 32; k++){
+			thisSplitList.get(k).add(thisSplit.get(k));
+			iSplitList.get(k).add(iSplit.get(k));
+		}
+		
+		BigInteger currentBestLower = new BigInteger(String.valueOf(Integer.MAX_VALUE)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
 
 		//which bits may be set to 0 on EITHER interval
 		for(int k = 31; k >= 0; k--){
@@ -422,13 +451,8 @@ class Interval extends AbstractDomain {
 				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a zero at the matching position
 				
 				currentBestLower = currentBestLower.and(new BigInteger("1").shiftLeft(highestZeroBit).not());
-			} else {
-				// absolutely no parts of any of the ranges have a bit not set at some position (i.e. both ranges are just 1's)
-				break;
 			}
 		}
-		
-		
 		
 		Interval result = transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
 		return handleOverflow(result);
