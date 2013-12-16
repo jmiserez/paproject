@@ -282,7 +282,7 @@ class Interval extends AbstractDomain {
 			//            |          |
 			//                  |            |
 			//
-			if(bigLower.compareTo(cursorStart) <= 0 && bigLower.compareTo(cursorEnd) >= 0){
+			if(bigLower.compareTo(cursorStart) <= 0 && bigUpper.compareTo(cursorEnd) >= 0){
 				partial = new Pair<BigInteger, BigInteger>(cursorStart, cursorEnd);
 			} else if(bigLower.compareTo(cursorStart) <= 0 && bigUpper.compareTo(cursorStart) >= 0 && bigUpper.compareTo(cursorEnd) <= 0 ){
 				partial = new Pair<BigInteger, BigInteger>(cursorStart, bigUpper);
@@ -292,8 +292,8 @@ class Interval extends AbstractDomain {
 				partial = new Pair<BigInteger, BigInteger>(bigLower, cursorEnd);
 			}
 			if(partial != null){
-				BigInteger p1 = partial.getO1().andNot(new BigInteger("1").shiftLeft(k));
-				BigInteger p2 = partial.getO2().andNot(new BigInteger("1").shiftLeft(k));
+				BigInteger p1 = partial.getO1().and(new BigInteger("1").shiftLeft(k).not());
+				BigInteger p2 = partial.getO2().and(new BigInteger("1").shiftLeft(k).not());
 				partial.setO1(p1);
 				partial.setO2(p2);
 			}
