@@ -132,6 +132,7 @@ public class DomainTest {
 							if(!r.contains(new Domain(rVal))){
 								System.out.println(a.toString()+" & "+b.toString()+" = "+r.toString()+"   ["+aVal+" & "+bVal+" = "+rVal+"]");
 							}
+							break;
 						case 2:
 							rVal = aVal | bVal;
 							if(!r.contains(new Domain(rVal))){
