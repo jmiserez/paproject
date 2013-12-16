@@ -15,7 +15,7 @@ import soot.toolkits.scalar.Pair;
 class Interval extends AbstractDomain {
 	
 	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = false;
-	public static int BITWISE_PRECISENESS = 8; //higher is better but slower
+	public static int BITWISE_PRECISENESS = 4; //higher is better but slower
 	
 	// TODO: Do you need to handle infinity or empty interval?
 	private final static long MIN_VALUE = Integer.MIN_VALUE;
@@ -361,8 +361,10 @@ class Interval extends AbstractDomain {
 							if(newBounds == null){
 								newBounds = new Pair<BigInteger, BigInteger>(elem.getO1(), elem.getO2());
 							} else {
-								BigInteger l = new BigInteger("1").shiftLeft(elem.getO1().bitLength()-1);
-								BigInteger u = new BigInteger("1").shiftLeft(elem.getO2().bitLength()).subtract(new BigInteger("1"));
+								BigInteger l = elem.getO1();
+								BigInteger u = elem.getO2();
+//								BigInteger l = new BigInteger("1").shiftLeft(elem.getO1().bitLength()-1);
+//								BigInteger u = new BigInteger("1").shiftLeft(elem.getO2().bitLength()).subtract(new BigInteger("1"));
 								if(l.compareTo(newBounds.getO1()) < 0){
 									newBounds.setO1(l);
 								}
