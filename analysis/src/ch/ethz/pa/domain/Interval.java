@@ -14,6 +14,8 @@ import soot.toolkits.scalar.Pair;
  */
 class Interval extends AbstractDomain {
 	
+	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = true;
+	
 	// TODO: Do you need to handle infinity or empty interval?
 	private final static long MIN_VALUE = Integer.MIN_VALUE;
 	private final static long MAX_VALUE =  Integer.MAX_VALUE; 

@@ -75,10 +75,12 @@ public class DomainTest {
 	
 	@Test
 	public void testBitwiseAndSoundness(){
-		//test all 4-bit integers
+		//test all 8-bit integers
 		ArrayList<Domain> testObjs = new ArrayList<Domain>();
-		for(int l = -16; l < 16; l++){
-			for(int u = l; l < 16; l++){
+		int max = (1 << 8) - 1;
+		int min = (1 << 8) * -1;
+		for(int l = min; l <= max; l++){
+			for(int u = min; l <= max; l++){
 				testObjs.add(new Domain(l,u));
 			}
 		}
