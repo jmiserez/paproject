@@ -93,7 +93,7 @@ public class DomainTest {
 	}
 	@Test
 	public void testRemainder3(){
-		assertEquals(new Domain(2,2), new Domain(7,8).rem(new Domain(-3,3)));
+		assertEquals(new Domain(0,2), new Domain(7,8).rem(new Domain(-3,3)));
 		assertEquals(new Domain(-4,4), new Domain(-7,8).rem(new Domain(3,5)));
 		assertEquals(new Domain(-4,4), new Domain(-7,8).rem(new Domain(3,5)));	}
 	

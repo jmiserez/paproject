@@ -209,9 +209,6 @@ class Interval extends AbstractDomain {
 			//this is 0
 			return moveIntoRange(new Interval(0));
 		}
-		
-		long range = this.upper - this.lower;
-
 		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
 		
 		long newUpper = maxAbsRemainder;
