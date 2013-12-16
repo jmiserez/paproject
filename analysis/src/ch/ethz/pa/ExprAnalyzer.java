@@ -138,10 +138,10 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 //		result.copyFrom(valueToInterval(v.getOp1()).rem(valueToInterval(v.getOp2())));
 //	}
 
-//	@Override
-//	public void caseSubExpr(SubExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseSubExpr(SubExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).minus(valueToInterval(v.getOp2())));
+	}
 
 	@Override
 	public void caseEqExpr(EqExpr v) {
