@@ -14,8 +14,8 @@ import soot.toolkits.scalar.Pair;
  */
 class Interval extends AbstractDomain {
 	
-	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = true;
-	public static int BITWISE_PRECISENESS = 8; //higher is better, but exponentially slower
+	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = false;
+	public static int BITWISE_PRECISENESS = 8; //higher is better but slower
 	
 	// TODO: Do you need to handle infinity or empty interval?
 	private final static long MIN_VALUE = Integer.MIN_VALUE;
@@ -339,6 +339,7 @@ class Interval extends AbstractDomain {
 					if(currentSplit.get(m) != null){
 						splitListToAddTo.get(m).add(currentSplit.get(m));
 					}
+					splitListToAddTo.get(m).removeAll(Collections.singleton(null)); //remove all nulls
 				}
 			}
 		}
@@ -352,15 +353,16 @@ class Interval extends AbstractDomain {
 			for(int m = 0; m < 32; m++){
 				// note that this adds impreciseness as described in the paper.
 				ArrayList<Pair<BigInteger, BigInteger>> listToMerge = splitListToAddTo.get(m);
+				Pair<BigInteger, BigInteger> newBounds = null;
 				if(listToMerge.size() > BITWISE_PRECISENESS){
-					Pair<BigInteger, BigInteger> newBounds = null;
+					newBounds = null;
 					for(Pair<BigInteger, BigInteger> elem : listToMerge){
 						if(elem != null){
 							if(newBounds == null){
 								newBounds = new Pair<BigInteger, BigInteger>(elem.getO1(), elem.getO2());
 							} else {
-								BigInteger l = elem.getO1();
-								BigInteger u = elem.getO2();
+								BigInteger l = new BigInteger("1").shiftLeft(elem.getO1().bitLength()-1);
+								BigInteger u = new BigInteger("1").shiftLeft(elem.getO2().bitLength()).subtract(new BigInteger("1"));
 								if(l.compareTo(newBounds.getO1()) < 0){
 									newBounds.setO1(l);
 								}
@@ -370,6 +372,9 @@ class Interval extends AbstractDomain {
 							}
 						}
 					}
+					ArrayList<Pair<BigInteger, BigInteger>> newList = new ArrayList<Pair<BigInteger, BigInteger>>();
+					newList.add(newBounds);
+					splitListToAddTo.put(m, newList);
 				}
 			}
 		}
