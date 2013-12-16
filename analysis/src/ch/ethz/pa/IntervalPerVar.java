@@ -28,15 +28,26 @@ public class IntervalPerVar {
 	private HashMap<String, AbstractDomain> values;
 	private HashMap<String, HashMap<Integer, Integer>> adjustValueCount;
 	private HashMap<String, HashMap<Integer, Integer>> readSensorCount;
+	public boolean unreachable;
 	
 	public IntervalPerVar() {
 		values = new HashMap<String, AbstractDomain>();
 		adjustValueCount = new HashMap<String, HashMap<Integer, Integer>>();
 		readSensorCount = new HashMap<String, HashMap<Integer, Integer>>();
+		unreachable = false;
+	}
+	
+	public IntervalPerVar(boolean unreachable) {
+		values = new HashMap<String, AbstractDomain>();
+		adjustValueCount = new HashMap<String, HashMap<Integer, Integer>>();
+		readSensorCount = new HashMap<String, HashMap<Integer, Integer>>();
+		this.unreachable = unreachable;
 	}
 	
 	@Override
 	public String toString() {
+		if (unreachable)
+			return "values = [UNREACHABLE]";
 		StringBuilder b = new StringBuilder();
 		String delim = ", ";
 		b.append("values = [");
@@ -57,6 +68,7 @@ public class IntervalPerVar {
 			n.copyFrom(entry.getValue());
 			values.put(entry.getKey(), n);
 		}
+		unreachable = other.unreachable;
 		adjustValueCount = PaUtils.deepCopyMap(other.adjustValueCount);
 		readSensorCount = PaUtils.deepCopyMap(other.readSensorCount);
 	}
@@ -168,6 +180,12 @@ public class IntervalPerVar {
 	
 	public Set<String> getVarNames(){
 		return values.keySet();
+	}
+
+	public void gotoBot() {
+		for (Map.Entry<String, AbstractDomain> entry : values.entrySet()) {
+			entry.getValue().copyFrom(new Domain());;
+		}
 	}
 
 }

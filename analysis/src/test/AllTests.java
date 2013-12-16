@@ -115,6 +115,12 @@ public class AllTests {
 		assertEquals("Program is SAFE\n", result);
 	}
 	
+	@Test
+	public void IfTest() {
+		String result = verify("IfTest");
+		assertEquals("Program is SAFE\n", result);
+	}
+	
 	private String verify(String className){
 		PrintStream stdout = System.out;
 		ByteArrayOutputStream myOut = new ByteArrayOutputStream();
