@@ -549,6 +549,10 @@ class Interval extends AbstractDomain {
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v) {
+			if (i1.upper - i1.lower == 0 &&
+				i2.upper - i2.lower == 0 &&
+				i1.equals(i2))
+				return new Pair<AbstractDomain, AbstractDomain>(BOT.copy(), BOT.copy());
 			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2), i1.join(i2));
 		}
 

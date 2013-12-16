@@ -9,9 +9,9 @@ public class TestSimpleGen11_375_at_testu_NegativeAboveEnd_3{
 		int x1 = new AircraftControl().readSensor(i0);
 		// x1 = [-999,999]  (checked values 999 -461 -999)
 		int index2 = 0;
-		if (x1 == 999) { index2 = -1000; }
-		if (x1 == -461) { index2 = 1000; }
-		if (x1 == -999) { index2 = 1000; }
+		if (x1 == 999) { index2 = -999; }
+		if (x1 == -461) { index2 = 123; }
+		if (x1 == -999) { index2 = 999; }
 		if (x1 == -1000) { index2 = -1001; }
 		if (x1 == 1000) { index2 = 1001; }
 		new AircraftControl().adjustValue(11, index2);
