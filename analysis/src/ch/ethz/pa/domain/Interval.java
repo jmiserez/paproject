@@ -237,7 +237,7 @@ class Interval extends AbstractDomain {
 	 * 
 	 * This allows us to treat it as an unsigned long as far as all bit operations are concerned and transpose it back once we've done the bitwise operations.
 	 * 
-	 * The old range: [0xffff ffff 8000 0000, 0x7fff ffff ffff ffff] (64bit signed int)
+	 * The old range: [0xffff ffff 8000 0000, 0x0000 0000 7fff ffff] (64bit signed int)
 	 * The new range: [0x0000 0000 0000 0000, 0xffff ffff ffff ffff] (65+bit signed BigInteger)
 	 * 
 	 * @return
