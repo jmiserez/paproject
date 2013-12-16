@@ -91,10 +91,10 @@ public class DomainTest {
 		int tops = 0;
 		int all = 0;
 		ArrayList<Domain> testObjs = new ArrayList<Domain>();
-		int max = (1 << 8) - 1;
-		int min = (1 << 8) * -1;
+		int max = (1 << 4) - 1;
+		int min = (1 << 4) * -1;
 		for(int l = min; l <= max; l++){
-			for(int u = min; l <= max; l++){
+			for(int u = min; u <= max; u++){
 				testObjs.add(new Domain(l,u));
 			}
 		}
@@ -103,6 +103,7 @@ public class DomainTest {
 		Iterator<Domain> i2 = testObjs.iterator();
 		while(i1.hasNext()){
 			Domain a = i1.next();
+			i2 = testObjs.iterator();
 			while(i2.hasNext()){
 				Domain b = i2.next();
 				//16*16 combinations
@@ -128,13 +129,23 @@ public class DomainTest {
 						switch(op){
 						case 1:
 							rVal = aVal & bVal;
+							if(!r.contains(new Domain(rVal))){
+								System.out.println(a.toString()+" & "+b.toString()+" = "+r.toString()+"   ["+aVal+" & "+bVal+" = "+rVal+"]");
+							}
 						case 2:
 							rVal = aVal | bVal;
+							if(!r.contains(new Domain(rVal))){
+								System.out.println(a.toString()+" | "+b.toString()+" = "+r.toString()+"   ["+aVal+" | "+bVal+" = "+rVal+"]");
+							}
 							break;
 						case 3:
 							rVal = aVal ^ bVal;
+							if(!r.contains(new Domain(rVal))){
+								System.out.println(a.toString()+" ^ "+b.toString()+" = "+r.toString()+"   ["+aVal+" ^ "+bVal+" = "+rVal+"]");
+							}
 							break;
 						}
+						
 						assertTrue(r.contains(new Domain(rVal)));
 						if(r.isTop()){
 							tops++;

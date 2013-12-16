@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import ch.ethz.pa.util.PaUtils;
 import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
@@ -13,9 +14,6 @@ import soot.toolkits.scalar.Pair;
  * or AbstractDomain as type for variables.
  */
 class Interval extends AbstractDomain {
-	
-	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = false;
-	public static int BITWISE_PRECISENESS = 4; //higher is better but slower
 	
 	// TODO: Do you need to handle infinity or empty interval?
 	private final static long MIN_VALUE = Integer.MIN_VALUE;
@@ -159,6 +157,8 @@ class Interval extends AbstractDomain {
 		// TODO: figure out the underlying logic and implement without candidate list
 		
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -192,6 +192,8 @@ class Interval extends AbstractDomain {
 		// abs(result) is always smaller than a
 		//TODO: check if this is actually correct
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -214,7 +216,7 @@ class Interval extends AbstractDomain {
 	}
 	
 	public AbstractDomain neg() {
-		handleOverflow(this); 
+		handleOverflow(this);
 		if(isTop()){
 			return TOP.copy();
 		}
@@ -231,157 +233,6 @@ class Interval extends AbstractDomain {
 		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
-	
-	/**
-	 * Transpose the interval to a completely signed range by adding Integer.MIN_VALUE
-	 * 
-	 * This allows us to treat it as an unsigned long as far as all bit operations are concerned and transpose it back once we've done the bitwise operations.
-	 * 
-	 * The old range: [0xffff ffff 8000 0000, 0x0000 0000 7fff ffff] (64bit signed int)
-	 * The new range: [0x0000 0000 0000 0000, 0xffff ffff ffff ffff] (65+bit signed BigInteger)
-	 * 
-	 * @return
-	 */
-	protected Pair<BigInteger, BigInteger> transposeToUnsignedBigInt(){
-		//transpose the Interval by Integer.MIN_VALUE
-		
-		BigInteger newLower = new BigInteger(String.valueOf(this.lower)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
-		BigInteger newUpper = new BigInteger(String.valueOf(this.upper)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
-		return new Pair<BigInteger, BigInteger>(newLower, newUpper);
-	}
-	
-	protected static Interval transposeFromUnsignedBigInt(Pair<BigInteger, BigInteger> bigInterval){
-		//transpose the Interval by Integer.MIN_VALUE
-		
-		long newLower = bigInterval.getO1().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate()).longValue();
-		long newUpper = bigInterval.getO2().subtract(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate()).longValue();
-		
-		return new Interval(newLower, newUpper);
-	}
-
-	/**
-	 * Returns an array of k 32-1 big intervals. Each big interval represents the interval KillBit_int(v,k), where v is the the subinterval of this where the k-th bit is set to 1.
-	 * 
-	 * KillBit_int definition: Regehr, Duongsaa: "Deriving Abstract Transfer Functions for Analyzing Embedded Software"
-	 *                           url: http://www.cs.utah.edu/~regehr/papers/lctes06_2/fp019-regehr.pdf
-	 */
-	protected static HashMap<Integer, Pair<BigInteger, BigInteger>> split(Pair<BigInteger, BigInteger> bigInterval){
-		BigInteger bigLower = bigInterval.getO1();
-		BigInteger bigUpper = bigInterval.getO2();
-		HashMap<Integer, Pair<BigInteger, BigInteger>> result = new HashMap<Integer, Pair<BigInteger, BigInteger>>(32);
-		//all unsigned operations, assume unsigned
-		for(int k = 31; k >= 0; k--){
-			Pair<BigInteger, BigInteger> partial = null;
-			
-			//
-			//  0000 0000
-			//  0000 1000
-			//  0010 0000
-			//  0010 1100
-			//  0011 1111
-			//
-			
-			BigInteger cursorStart = new BigInteger("1").shiftLeft(k);
-			BigInteger cursorEnd = new BigInteger("1").shiftLeft(k+1).subtract(new BigInteger("1"));
-			//are there any numbers in this range
-			
-			//         [               ]
-			//      |                     |
-			//      |        |
-			//            |          |
-			//                  |            |
-			//
-			if(bigLower.compareTo(cursorStart) <= 0 && bigUpper.compareTo(cursorEnd) >= 0){
-				partial = new Pair<BigInteger, BigInteger>(cursorStart, cursorEnd);
-			} else if(bigLower.compareTo(cursorStart) <= 0 && bigUpper.compareTo(cursorStart) >= 0 && bigUpper.compareTo(cursorEnd) <= 0 ){
-				partial = new Pair<BigInteger, BigInteger>(cursorStart, bigUpper);
-			} else if(bigLower.compareTo(cursorStart) >= 0 && bigLower.compareTo(cursorEnd) <= 0 && bigUpper.compareTo(cursorStart) >= 0 && bigUpper.compareTo(cursorEnd) <= 0 ){
-				partial = new Pair<BigInteger, BigInteger>(bigLower, bigUpper);
-			} else if(bigLower.compareTo(cursorStart) >= 0 && bigLower.compareTo(cursorEnd) <= 0 && bigUpper.compareTo(cursorEnd) >= 0){
-				partial = new Pair<BigInteger, BigInteger>(bigLower, cursorEnd);
-			}
-			if(partial != null){
-				BigInteger p1 = partial.getO1().and(new BigInteger("1").shiftLeft(k).not());
-				BigInteger p2 = partial.getO2().and(new BigInteger("1").shiftLeft(k).not());
-				partial.setO1(p1);
-				partial.setO2(p2);
-			}
-			result.put(k, partial);	
-		}
-		return result;
-	}
-	
-	private static <T> ArrayList<T> nonNullEntries(List<T> list){
-		ArrayList<T> result = new ArrayList<T>();
-		for(T elem : list){
-			if(elem != null){
-				result.add(elem);
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * This is the actual KillBit_int(v,k) function. This function assumes that the MSB bit of both lower and upper is k, thus the range is bounded by this bit k.
-	 */
-	private static void killBitSubrange(ArrayList<Pair<BigInteger, BigInteger>> killBitRanges, int k , HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> splitListToAddTo){
-		ArrayList<Pair<BigInteger, BigInteger>> cloneList = new ArrayList<Pair<BigInteger,BigInteger>>(killBitRanges);
-		for(Pair<BigInteger, BigInteger> elem : cloneList){
-			if(elem != null){
-				BigInteger elemLower = elem.getO1().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
-				BigInteger elemUpper = elem.getO2().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
-				
-				HashMap<Integer, Pair<BigInteger, BigInteger>> currentSplit = split(new Pair<BigInteger, BigInteger>(elemLower, elemUpper));
-				for(int m = 0; m < 32; m++){
-					if(splitListToAddTo.get(m) == null){
-						splitListToAddTo.put(m, new ArrayList<Pair<BigInteger, BigInteger>>());
-					}
-					if(currentSplit.get(m) != null){
-						splitListToAddTo.get(m).add(currentSplit.get(m));
-					}
-					splitListToAddTo.get(m).removeAll(Collections.singleton(null)); //remove all nulls
-				}
-			}
-		}
-		if(!BITWISE_SLOW_BUT_MAXIMALLY_PRECISE){
-			// need to reduce the number of splits in the list. Otherwise our runtime is O(n!), where n is the number of bits in an integer.
-			//
-			// Here we just fudge the results and merge all ranges together. E.g.:
-			//			
-			// [0000,0000], [0100,0101] -> would result in [0000,0101], although that is clearly not precise.
-			//			
-			for(int m = 0; m < 32; m++){
-				// note that this adds impreciseness as described in the paper.
-				ArrayList<Pair<BigInteger, BigInteger>> listToMerge = splitListToAddTo.get(m);
-				Pair<BigInteger, BigInteger> newBounds = null;
-				if(listToMerge.size() > BITWISE_PRECISENESS){
-					newBounds = null;
-					for(Pair<BigInteger, BigInteger> elem : listToMerge){
-						if(elem != null){
-							if(newBounds == null){
-								newBounds = new Pair<BigInteger, BigInteger>(elem.getO1(), elem.getO2());
-							} else {
-								BigInteger l = elem.getO1();
-								BigInteger u = elem.getO2();
-//								BigInteger l = new BigInteger("1").shiftLeft(elem.getO1().bitLength()-1);
-//								BigInteger u = new BigInteger("1").shiftLeft(elem.getO2().bitLength()).subtract(new BigInteger("1"));
-								if(l.compareTo(newBounds.getO1()) < 0){
-									newBounds.setO1(l);
-								}
-								if(u.compareTo(newBounds.getO2()) > 0){
-									newBounds.setO2(u);
-								}
-							}
-						}
-					}
-					ArrayList<Pair<BigInteger, BigInteger>> newList = new ArrayList<Pair<BigInteger, BigInteger>>();
-					newList.add(newBounds);
-					splitListToAddTo.put(m, newList);
-				}
-			}
-		}
-	}
-	
 	public AbstractDomain and(AbstractDomain a) {
 		Interval i = (Interval) a;
 		handleOverflow(this); 
@@ -389,132 +240,56 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-
+		KillableBitInterval thisKillable = new KillableBitInterval(this);
+		KillableBitInterval iKillable = new KillableBitInterval(i);
 		
-		Pair<BigInteger, BigInteger> thisBig = this.transposeToUnsignedBigInt();
-		Pair<BigInteger, BigInteger> iBig = i.transposeToUnsignedBigInt();
-		
-		// lists containing all splits, e.g.
-		// 0000 1100 -> we'd get an interval starting from 1100
-		// 0100 1000 -> we'd get an interval starting from 1000, also with same length
-		//
-		HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> thisSplitList = new HashMap<Integer, ArrayList<Pair<BigInteger,BigInteger>>>();
-		HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> iSplitList = new HashMap<Integer, ArrayList<Pair<BigInteger,BigInteger>>>();
-		for(int k = 0; k < 32; k++){
-			thisSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
-			iSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
-		}
-		
-		HashMap<Integer, Pair<BigInteger, BigInteger>> thisSplit = split(thisBig);
-		HashMap<Integer, Pair<BigInteger, BigInteger>> iSplit = split(iBig);
-		
-		for(int k = 0; k < 32; k++){
-			thisSplitList.get(k).add(thisSplit.get(k));
-			iSplitList.get(k).add(iSplit.get(k));
-		}
-		//now these lists contain just one split
-		
-		BigInteger currentBestUpper = new BigInteger("0");
+		BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
 		
 		//which bits may be set to 1 on BOTH intervals
 		for(int k = 31; k >= 0; k--){
-			int highestCommonOneBit = -1;
-			if(nonNullEntries(thisSplitList.get(k)).size() > 0 && nonNullEntries(iSplitList.get(k)).size() > 0){
-				highestCommonOneBit = k;
-			}
-			if(nonNullEntries(thisSplitList.get(k)).size() > 0){
-				//we need to kill the bit in each of the splits and add the remainders to the splits list
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
-				thisSplitList.clear();
-				killBitSubrange(killBitCandidates, k, thisSplitList);
-			}
-			if(nonNullEntries(iSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
-				iSplitList.clear();
-				killBitSubrange(killBitCandidates, k, iSplitList);
+			if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
+				thisKillable.selectOneAtBit(k);
+				iKillable.selectOneAtBit(k);
 
-			}
-			if(highestCommonOneBit >= 0){
 				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
 				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
-				
-				currentBestUpper = currentBestUpper.or(new BigInteger("1").shiftLeft(highestCommonOneBit));
+				currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
+			} else {
+				if(thisKillable.mayBeOne(k)){
+					thisKillable.selectOneOrZeroBit(k);
+				}
+				if(iKillable.mayBeOne(k)){
+					iKillable.selectOneOrZeroBit(k);
+				}
 			}
 		}
 		//have upper
 		
-		//reset lists
-		thisSplitList.clear();
-		iSplitList.clear();
-		for(int k = 0; k < 32; k++){
-			thisSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
-			iSplitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
-		}
-		for(int k = 0; k < 32; k++){
-			thisSplitList.get(k).add(thisSplit.get(k));
-			iSplitList.get(k).add(iSplit.get(k));
-		}
+		//reset Killables
+		thisKillable.reset();
+		iKillable.reset();
 		
-		BigInteger currentBestLower = new BigInteger(String.valueOf(Integer.MAX_VALUE)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
+		BigInteger currentBestLower = PaUtils.bigIntAllOnes();
 
-		//which bits may be set to 0 on EITHER interval
+		//which bits may be set to 0 on EITHER intervals
 		for(int k = 31; k >= 0; k--){
-			int highestZeroBit = -1; //00 is first bit
-			
-			boolean thisSplitListhasEntriesForSmallerK = false;
-			boolean iSplitListhasEntriesForSmallerK = false;
-			if(k > 0){
-				for(int m = k-1; m >= 0; m--){
-					if(nonNullEntries(thisSplitList.get(m)).size() != 0){
-						thisSplitListhasEntriesForSmallerK = true;
-						break;
-					}
+			boolean thisMayBeZero = thisKillable.mayBeZero(k);
+			boolean iMayBeZero = iKillable.mayBeZero(k);
+			if(thisMayBeZero || iMayBeZero){
+				if(thisMayBeZero && iMayBeZero) {
+					thisKillable.selectOneOrZeroBit(k);
+					iKillable.selectOneOrZeroBit(k);
+				} else if(thisMayBeZero){
+					thisKillable.selectZeroAtBit(k);
+					iKillable.selectOneAtBit(k);
+				} else if(iMayBeZero){
+					thisKillable.selectOneAtBit(k);
+					iKillable.selectZeroAtBit(k);
 				}
-				for(int m = k-1; m >= 0; m--){
-					if(nonNullEntries(iSplitList.get(m)).size() != 0){
-						iSplitListhasEntriesForSmallerK = true;
-						break;
-					}
-				}
-			}
-			boolean thisDiscard = thisSplitListhasEntriesForSmallerK || nonNullEntries(thisSplitList.get(k)).size() == 0;
-			boolean iDiscard = iSplitListhasEntriesForSmallerK || nonNullEntries(iSplitList.get(k)).size() == 0;
-			if(thisDiscard){
-				highestZeroBit = k; //there is a zero here in this
-				//discard all ones
-				thisSplitList.get(k).clear();
-			}
-			if(iDiscard){
-				highestZeroBit = k; //there is a zero here in this
-				//discard all ones
-				iSplitList.get(k).clear();
-			}
-			if(!thisDiscard || iDiscard){
-				//killBit
-				if(nonNullEntries(thisSplitList.get(k)).size() > 0){
-					ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
-					thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
-					killBitSubrange(killBitCandidates, k, thisSplitList);
-				}
-			}
-			if(!iDiscard || thisDiscard){
-				//killBit
-				if(nonNullEntries(iSplitList.get(k)).size() > 0){
-					ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
-					iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
-					killBitSubrange(killBitCandidates, k, iSplitList);
-				}
-			}
-			
-			if(highestZeroBit >= 0){
-				// we "select" this bit to be not set in both this and i. Then we can discard all other ranges
-				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a zero at the matching position
-				
-				currentBestLower = currentBestLower.and(new BigInteger("1").shiftLeft(highestZeroBit).not());
+				currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
 			}
 		}
-		
-		Interval result = transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
+		Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
 		return moveIntoRange(result);
 	}
 
