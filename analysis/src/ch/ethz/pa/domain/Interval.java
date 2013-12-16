@@ -205,22 +205,29 @@ class Interval extends AbstractDomain {
 			//constants
 			return moveIntoRange(new Interval(this.lower % i.lower));
 		}
-
-		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
+		if(this.upper - this.lower == 0 && this.upper == 0){
+			//this is 0
+			return moveIntoRange(new Interval(0));
+		}
+		return TOP.copy();
 		
-		long newUpper = maxAbsRemainder;
-		if(this.upper < maxAbsRemainder){
-			newUpper = this.upper;
-		}
+//		long range = this.upper - this.lower;
 
-		// negative remainders only happen for negative this
-		long thisMin = Math.min(0, Math.min(this.lower, this.upper));
-			
-		long newLower = -maxAbsRemainder; //default case
-		if(thisMin < -maxAbsRemainder){
-			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
-		}
-		return moveIntoRange(new Interval(newLower, newUpper));
+//		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
+//		
+//		long newUpper = maxAbsRemainder;
+//		if(this.upper < maxAbsRemainder){
+//			newUpper = this.upper;
+//		}
+//
+//		// negative remainders only happen for negative this
+//		long thisMin = Math.min(0, Math.min(this.lower, this.upper));
+//			
+//		long newLower = -maxAbsRemainder; //default case
+//		if(thisMin < -maxAbsRemainder){
+//			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
+//		}
+//		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain neg() {
