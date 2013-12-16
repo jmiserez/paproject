@@ -23,6 +23,7 @@ import soot.jimple.MulExpr;
 import soot.jimple.NeExpr;
 import soot.jimple.NegExpr;
 import soot.jimple.OrExpr;
+import soot.jimple.RemExpr;
 import soot.jimple.ShlExpr;
 import soot.jimple.ShrExpr;
 import soot.jimple.SubExpr;
@@ -131,6 +132,11 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	public void caseDivExpr(DivExpr v) {
 		result.copyFrom(valueToInterval(v.getOp1()).divide(valueToInterval(v.getOp2())));
 	}
+	
+	@Override
+	public void caseRemExpr(RemExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).rem(valueToInterval(v.getOp2())));
+	}
 
 	@Override
 	public void caseSubExpr(SubExpr v) {
@@ -191,12 +197,12 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 	public void caseShlExpr(ShlExpr v) {
 		result.copyFrom(valueToInterval(v.getOp1()).shl(valueToInterval(v.getOp2())));
 	}
-	
+
 	@Override
 	public void caseShrExpr(ShrExpr v) {
 		result.copyFrom(valueToInterval(v.getOp1()).shr(valueToInterval(v.getOp2())));
 	}
-	
+
 	@Override
 	public void caseUshrExpr(UshrExpr v) {
 		result.copyFrom(valueToInterval(v.getOp1()).ushr(valueToInterval(v.getOp2())));
@@ -246,6 +252,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		IntervalPerVar s1 = select(a1, r1, sa.currentState);
 		IntervalPerVar s2 = select(a2, r2, sa.currentState);
 		IntervalPerVar.meet(s1, s2, sa.fallState);
+		sa.fallState.unreachable = s1.unreachable || s2.unreachable;
 		
 		p = ps.branchOut;
 		r1 = p.getO1();
@@ -253,6 +260,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		s1 = select(a1, r1, sa.currentState);
 		s2 = select(a2, r2, sa.currentState);
 		IntervalPerVar.meet(s1, s2, sa.branchState);
+		sa.branchState.unreachable = s1.unreachable || s2.unreachable;
 	}
 	
 	/*
@@ -272,7 +280,7 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 			if (!new Domain(a.value).meet(r).isBot())
 				result = m;
 			else
-				result = new IntervalPerVar(); // BOT
+				result = new IntervalPerVar(true); // BOT
 		}
 		
 		@Override

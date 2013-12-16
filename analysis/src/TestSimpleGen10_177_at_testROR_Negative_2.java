@@ -27,7 +27,7 @@ public class TestSimpleGen10_177_at_testROR_Negative_2{
 		// x10 = [-9953280,9953280]
 		// x10 = [-9953280,9953280]  (checked values -2430 36 -180)
 		int i11 = 0;
-		int x12 = i11 | x10;
+		int x12 = x10; //i11 | x10;
 		// x12 = [-2147483648,2147483647]  (checked values -2430 39 -178)
 		int i13 = -3;
 		// x12 = [-2147483648,2147483647]
@@ -42,9 +42,9 @@ public class TestSimpleGen10_177_at_testROR_Negative_2{
 		// x12 = [-2147483648,2147483647]
 		// x12 = [-2147483648,2147483647]  (checked values -2430 39 -178)
 		int index24 = 0;
-		if (x12 == -2430) { index24 = -1000; }
-		if (x12 == 39) { index24 = 998; }
-		if (x12 == -178) { index24 = 998; }
+		if (x12 == -2430) { index24 = -999; }
+		if (x12 == 39) { index24 = -1000; }
+		if (x12 == -178) { index24 = 1000; }
 		new AircraftControl().adjustValue(11, index24);
 	}
 }

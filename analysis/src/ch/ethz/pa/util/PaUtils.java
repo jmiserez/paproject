@@ -1,5 +1,6 @@
 package ch.ethz.pa.util;
 
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -92,6 +93,22 @@ public class PaUtils {
 			result.add(e);
 		}
 		return result;
+	}
+	
+	public static BigInteger bigIntSetKthBitToOne(BigInteger b, int k){
+		return b.or(new BigInteger("1").shiftLeft(k));
+	}
+	
+	public static BigInteger bigIntSetKthBitToZero(BigInteger b, int k){
+		return b.and(new BigInteger("1").shiftLeft(k).not());
+	}
+	
+	public static BigInteger bigIntAllZeros(){
+		return new BigInteger("0");
+	}
+	
+	public static BigInteger bigIntAllOnes(){
+		return new BigInteger(String.valueOf(Integer.MAX_VALUE)).add(new BigInteger(String.valueOf(Integer.MIN_VALUE)).negate());
 	}
 	
 }

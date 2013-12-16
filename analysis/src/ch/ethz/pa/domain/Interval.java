@@ -129,6 +129,10 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower * i.lower));
+		}
 		// TODO: Handle overflow.
 		long newLower = this.lower * i.lower, 
 			newUpper = this.upper * i.upper;
@@ -153,8 +157,14 @@ class Interval extends AbstractDomain {
 		// TODO: figure out the underlying logic and implement without candidate list
 		
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower / i.lower));
 		}
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
@@ -186,28 +196,39 @@ class Interval extends AbstractDomain {
 		// abs(result) is always smaller than a
 		//TODO: check if this is actually correct
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower % i.lower));
+		}
+		if(this.upper - this.lower == 0 && this.upper == 0){
+			//this is 0
+			return moveIntoRange(new Interval(0));
+		}
 		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
 		
 		long newUpper = maxAbsRemainder;
 		if(this.upper < maxAbsRemainder){
+			//max possible remainder is > than number
 			newUpper = this.upper;
 		}
-
-		// negative remainders only happen for negative this
-		long thisMin = Math.min(0, Math.min(this.lower, this.upper));
-			
-		long newLower = -maxAbsRemainder; //default case
-		if(thisMin < -maxAbsRemainder){
-			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
+		long newLower = maxAbsRemainder * -1;
+		if(this.lower >= 0){
+			newLower = 0;
+			if(this.lower < maxAbsRemainder){
+				newLower = this.lower;
+			}
 		}
+		
 		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain neg() {
+		handleOverflow(this);
 		if(isTop()){
 			return TOP.copy();
 		}
@@ -224,158 +245,312 @@ class Interval extends AbstractDomain {
 		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
-	public AbstractDomain and(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
-//		Interval i = (Interval) a;
-//		
-//		List<Integer> newBounds = new ArrayList<Integer>();
-//		long[] thisBounds = {this.lower, this.upper};
-//		long[] iBounds = {i.lower, i.upper};
-//
-//		// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
-//		// 1: -/+ -> intersection = [0,0]
-//		// 2: +/- -> intersection = [0,0]
-//		// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
-//		
-//		for(long tBound : thisBounds){
-//			for(long iBound : iBounds){
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound))+1)) - 1));
-//					newBounds.add(-1);
-//				}
-//				// case 2: this negative, i positive
-//				if(tBound < 0 && iBound >= 0){
-//					newBounds.add(0);
-//				}
-//				// case 3: this positive, i negative
-//				if(tBound < 0 && iBound >= 0){
-//					newBounds.add(0);
-//				}
-//				// case 4: both positive. AND values of intersection go up from 0 to this value
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(0);
-//					newBounds.add((1 << (Integer.numberOfLeadingZeros(Math.max(tBound, iBound))+1)) - 1);
-//				}
-//			}
-//		}
-//		if(newBounds.size() < 1){
-//			return TOP;
-//		}
-//		return handleOverflow(new Interval(Collections.min(newBounds), Collections.max(newBounds)));
+	
+	private static long logAwayFromZero(long val){
+		if(val < 0){
+			// 1011 to 1000, bits are 0
+			// 0100 -> 0111 -> 1000
+			return ~((Long.highestOneBit(~val) << 1) - 1);
+		} else {
+			// 0101 to 0111, bits are 1
+			return ((Long.highestOneBit(val) << 1) - 1);
+		}
 	}
-
+	
+	private static long logTowardsZero(long val){
+		if(val < 0){
+			return logAwayFromZero(val) >> 1;
+		} else {
+			return logAwayFromZero(val) << 1;
+		}
+	}
+	
+	@Override
+	public AbstractDomain and(AbstractDomain a) {
+		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower & i.lower));
+		}
+		
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
+		
+		if(this.lower == 0 && this.upper == 0 || i.lower == 0 && i.upper == 0){
+			return moveIntoRange(new Interval(0));
+		} else if(this.lower == -1 && this.upper == -1){
+			return moveIntoRange((Interval) i.copy());
+		} else if(i.lower == -1 && i.upper == -1){
+			return moveIntoRange((Interval) this.copy());
+		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(0));
+		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(0));
+		} else if(this.upper <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			long max = this.upper & Integer.MAX_VALUE;
+			long min = this.lower & Integer.MAX_VALUE;
+			return moveIntoRange(new Interval(min,max));
+		} else if(i.upper <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			long max = i.upper & Integer.MAX_VALUE;
+			long min = i.lower & Integer.MAX_VALUE;
+			return moveIntoRange(new Interval(min,max));
+		} else if(this.lower >=0 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			return moveIntoRange(new Interval(0));
+		} else if(i.upper >= 0 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			return moveIntoRange(new Interval(0));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(0L);  //AND can go this far down
+			candidates.add(this.upper & logAwayFromZero(i.upper));
+			candidates.add(i.upper & logAwayFromZero(this.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add(~0L);  //AND can go this far up
+			candidates.add(this.lower & logAwayFromZero(i.lower));
+			candidates.add(i.lower & logAwayFromZero(this.lower));
+		} else {
+			return TOP.copy();
+		}
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		
+		return moveIntoRange(new Interval(newLower, newUpper));
+	}
+	
 	public AbstractDomain or(AbstractDomain a) {
-		return TOP.copy();
-//		Interval i = (Interval) a;
-//
-//		List<Integer> newBounds = new ArrayList<Integer>();
-//		long[] thisBounds = {this.lower, this.upper};
-//		long[] iBounds = {i.lower, i.upper};
-//
-//		// 0: -/- -> intersection = [X, -1] (X is calculated as seen below)
-//		// 1: -/+ -> intersection = [0,0]
-//		// 2: +/- -> intersection = [0,0]
-//		// 3: +/+ -> intersection = [0, Y] (Y is calculated as seen below)
-//		
-//		for(long tBound : thisBounds){
-//			for(long iBound : iBounds){
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(~((1 << (Integer.numberOfLeadingZeros(Math.max(~tBound, ~iBound)))+1) - 1));
-//					newBounds.add(-1);
-//				}
-//				// case 2: this negative, i positive
-//				if(tBound < 0 && iBound >= 0){
-//					//TODO
-//				}
-//				// case 3: this positive, i negative
-//				if(tBound < 0 && iBound >= 0){
-//					//TODO
-//				}
-//				// case 4: both positive. AND values of intersection go up from 0 to this value
-//				if(tBound < 0 && iBound < 0){
-//					newBounds.add(0);
-//					// 0000 0111
-//					// 0001 0000
-//					// 0001 0000
-//					newBounds.add((1 << (Integer.numberOfLeadingZeros(Math.max(tBound, iBound)) + 1))
-//							+ ((1 << (Integer.numberOfLeadingZeros(Math.min(tBound, iBound)) + 1)) - 1));
-//					
-//				}
-//			}
-//		}
-//		if(newBounds.size() < 1){
-//			return TOP;
-//		}
-//		return handleOverflow(new Interval(Collections.min(newBounds), Collections.max(newBounds)));
+		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower | i.lower));
+		}
+		
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
+		
+		candidates.add(this.lower);
+		candidates.add(this.upper);
+		candidates.add(i.lower);
+		candidates.add(i.upper);
+
+		if(this.lower == -1 && this.upper == -1 || i.lower == -1 && i.upper == -1){
+			return moveIntoRange(new Interval(-1));
+		} else if(this.lower == 0 && this.upper == 0){
+			return moveIntoRange((Interval) i.copy());
+		} else if(i.lower == 0 && i.upper == 0){
+			return moveIntoRange((Interval) this.copy());
+		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(this.lower | Integer.MIN_VALUE, this.upper | Integer.MIN_VALUE));
+		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(i.lower | Integer.MIN_VALUE, i.upper | Integer.MIN_VALUE));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(i.upper | logAwayFromZero(this.upper));
+			candidates.add(this.upper | logAwayFromZero(i.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(-1L);
+		} else {
+			return TOP.copy();
+		}
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 
 	public AbstractDomain xor(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower ^ i.lower));
+		}
+		
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
+		
+		candidates.add(this.lower);
+		candidates.add(this.upper);
+		candidates.add(i.lower);
+		candidates.add(i.upper);
+
+		if(this.lower == -1 && this.upper == -1){
+			return moveIntoRange(new Interval(~i.upper, ~i.lower));
+		}else if(i.lower == -1 && i.upper == -1){
+			return moveIntoRange(new Interval(~this.upper, ~this.lower));
+		} else if(this.lower == 0 && this.upper == 0){
+			return moveIntoRange((Interval) i.copy());
+		} else if(i.lower == 0 && i.upper == 0){
+			return moveIntoRange((Interval) this.copy());
+		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(i.lower ^ Integer.MIN_VALUE ,i.upper ^ Integer.MIN_VALUE));
+		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(this.lower ^ Integer.MIN_VALUE ,this.upper ^ Integer.MIN_VALUE));
+		} else if(this.upper <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			return moveIntoRange(new Interval(i.upper ^ Integer.MAX_VALUE ,i.lower ^ Integer.MAX_VALUE));
+		} else if(i.upper <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			return moveIntoRange(new Interval(this.upper ^ Integer.MAX_VALUE ,this.lower ^ Integer.MAX_VALUE));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(0L);
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(logAwayFromZero(this.upper));
+			candidates.add(logAwayFromZero(i.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add((long)Integer.MAX_VALUE);
+			candidates.add(0L);
+		} else {
+			return TOP.copy();
+		}
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		
+		return moveIntoRange(new Interval(newLower, newUpper));
+	}
+	
+//	
+//	The complete 8-bit 2's complement integer range.
+//  ================================================
+//	
+//	Dealing with unsigned values for bitwise operations:
+//	 - unsigned: result = a OP b
+//	 - signed:   result = ~(~a OP ~b)
+//	
+//  1000 0000 -> -128 Integer.MIN_VALUE
+//	1000 0001 -> -127 
+//	1000 0010 -> -126 
+//	1111 0000 ->  -16 --> 0000 1111
+//	
+//	1111 0001 ->  -15
+//	1111 0010 ->  -14
+//	1111 0011 ->  -13 --> 0000 1100 -> 0000 1000 -> 0000 1111 -> 1111 0000
+//	1111 0100 ->  -12
+//	1111 0101 ->  -11
+//	1111 0110 ->  -10 
+//	1111 0111 ->   -9 
+//	1111 1000 ->   -8 --> 0000 0111
+//	1111 1001 ->   -7
+//	1111 1010 ->   -6
+//	1111 1011 ->   -5
+//	1111 1100 ->   -4
+//	1111 1101 ->   -3
+//	1111 1110 ->   -2
+//	1111 1111 ->   -1
+//	
+//	0000 0000 ->    0
+//	0000 0001 ->    1
+//	0000 0010 ->    2
+//	0000 0011 ->    3
+//	0000 0100 ->    4
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	0000 0111 ->    7
+//	0000 1000 ->    8
+//	0000 1001 ->    9
+//	0000 1010 ->   10
+//	0000 1011 ->   11i.lower & li.lowei.lower & li.lower & lr & l
+//	0000 1100 ->   12
+//	0000 1101 ->   13 --> 0111 0010
+//	0000 1110 ->   14 --> 0111 0001
+//	0000 1111 ->   15
+//	0001 0000 ->   16
+//
+//	0111 1100 ->  124
+//	0111 1101 ->  125
+//	0111 1110 ->  126
+//	0111 1111 ->  127 Integer.MAX_VALUE
+	
+	private AbstractDomain handleShift(AbstractDomain a, ShiftType type){
+		// Note: Shifting by x is actually defined as: 
+		//    1 << x == 1 << (x & 0xf1)
+		// as per: http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.19
+		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
+		// 
+		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(shift(this.lower,i.lower,type)));
+		}
+		long normalizedLower = i.lower & 0x1f;
+		long normalizedRange = Math.min(31, i.upper - i.lower);
+		long normalizedUpper = normalizedLower + normalizedRange;
+		
+		ArrayList<Long> candidates = new ArrayList<Long>();
+		long newLower;
+		long newUpper;
+		candidates.add(shift(this.lower,normalizedLower,type));
+		candidates.add(shift(this.upper,normalizedLower,type));
+		candidates.add(shift(this.lower,normalizedUpper % 32,type));
+		candidates.add(shift(this.upper,normalizedUpper % 32,type));
+		if(normalizedUpper > 31){
+			//add special cases
+			candidates.add(shift(this.lower,0,type));
+			candidates.add(shift(this.upper,0,type));
+			candidates.add(shift(this.lower,31,type));
+			candidates.add(shift(this.upper,31,type));
+		} else {
+			if(type == ShiftType.USHR && normalizedLower == 0){
+				//zero for USHR is really a special case, as it can lead to negative values
+				candidates.add(shift(this.lower,0,type));
+				candidates.add(shift(this.upper,0,type));
+			}
+		}
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 
 	public AbstractDomain shl(AbstractDomain a) {
-		// slight problem with shifting by negative values: 
-		//    1 << -5          
-		//       is defined seperately as 
-		//    1 << (-5 & 0xf1)
-		// as per: http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.19
-		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
-		//
-		// example output:
-		//		0:	1				0:	1
-		//		1:	2				-1:	-2147483648
-		//		2:	4				-2:	1073741824
-		//		3:	8				-3:	536870912
-		//		4:	16				-4:	268435456
-		//		5:	32				-5:	134217728
-		//		6:	64				-6:	67108864
-		//		7:	128				-7:	33554432
-		//		8:	256				-8:	16777216
-		//		9:	512				-9:	8388608
-		//		10:	1024			-10: 4194304
-		//		11:	2048			-11: 2097152
-		//		12:	4096			-12: 1048576
-		//		13:	8192			-13: 524288
-		//		14:	16384			-14: 262144
-		//		15:	32768			-15: 131072
-		//		16:	65536			-16: 65536
-		//		17:	131072			-17: 32768
-		//		18:	262144			-18: 16384
-		//		19:	524288			-19: 8192
-		//		20:	1048576			-20: 4096
-		//		21:	2097152			-21: 2048
-		//		22:	4194304			-22: 1024
-		//		23:	8388608			-23: 512
-		//		24:	16777216		-24: 256
-		//		25:	33554432		-25: 128
-		//		26:	67108864		-26: 64
-		//		27:	134217728		-27: 32
-		//		28:	268435456		-28: 16
-		//		29:	536870912		-29: 8
-		//		30:	1073741824		-30: 4
-		//		31:	-2147483648		-31: 2
-		//		32:	1		-32:	1
-		//		33:	2		-33:	-2147483648
-		
-//		Interval i = (Interval) a;
-//		if(isTop() || i.isTop()){
-//			return TOP.copy();
-//		}
-//		return multiply(new Interval(1 << i.lower,  1 << i.upper));
-		return TOP.copy();
+		return handleShift(a, ShiftType.SHL);
 	}
 
 	public AbstractDomain shr(AbstractDomain a) {
-//		Interval i = (Interval) a;
-//		if(isTop() || i.isTop()){
-//			return TOP.copy();
-//		}
-//		return divide(new Interval(1 << i.lower,  1 << i.upper));
-		return TOP.copy();
+		return handleShift(a, ShiftType.SHR);
 	}
 	
 	public AbstractDomain ushr(AbstractDomain a) {
-		return TOP.copy(); //TODO implement
+		return handleShift(a, ShiftType.USHR);
 	}
 	
 	@Override
@@ -437,6 +612,10 @@ class Interval extends AbstractDomain {
 
 		@Override
 		Pair<AbstractDomain, AbstractDomain> doNeExpr(ConditionExpr v) {
+			if (i1.upper - i1.lower == 0 &&
+				i2.upper - i2.lower == 0 &&
+				i1.equals(i2))
+				return new Pair<AbstractDomain, AbstractDomain>(BOT.copy(), BOT.copy());
 			return new Pair<AbstractDomain, AbstractDomain>(i1.join(i2), i1.join(i2));
 		}
 
@@ -481,6 +660,23 @@ class Interval extends AbstractDomain {
 		return lower == Interval.BOT.lower && upper == Interval.BOT.upper  && bot == true;
 	}
 	
+	private enum ShiftType {
+		SHL, SHR, USHR
+	};
+	
+	private long shift(long a, long b, ShiftType type){
+		switch (type) {
+		case SHL:
+			return a << b;
+		case SHR:
+			return a >> b;
+		case USHR:
+			return a >>> b;
+		default:
+			throw new IllegalArgumentException("type must be != null");
+		}
+	}
+	
 	@Override
 	public int diff(AbstractDomain a) {
 		int directionality = 0;
@@ -502,8 +698,70 @@ class Interval extends AbstractDomain {
 	
 	@Override
 	public AbstractDomain widen(int directionality) {
-		Interval result = (Interval) this.copy();
 		return TOP.copy();
 	}
-
+	
+//	public AbstractDomain and(AbstractDomain a) {
+//	Interval i = (Interval) a;
+//	handleOverflow(this); 
+//	handleOverflow(i);	
+//	if(isTop() || i.isTop()){
+//		return TOP.copy();
+//	}
+//	KillableBitInterval thisKillable = new KillableBitInterval(this);
+//	KillableBitInterval iKillable = new KillableBitInterval(i);
+//	
+//	BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
+//	
+//	//which bits may be set to 1 on BOTH intervals
+//	for(int k = 31; k >= 0; k--){
+//		if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
+//			thisKillable.selectOneAtBit(k);
+//			iKillable.selectOneAtBit(k);
+//
+//			// we "select" this bit to be set in both this and i. Then we can discard all other ranges
+//			// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
+//			currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
+//		} else {
+//			if(thisKillable.mayBeOne(k)){
+//				thisKillable.selectOneOrZeroBit(k);
+//			}else{
+//				thisKillable.selectZeroAtBit(k);
+//			}
+//			if(iKillable.mayBeOne(k)){
+//				iKillable.selectOneOrZeroBit(k);
+//			}else{
+//				iKillable.selectZeroAtBit(k);
+//			}
+//		}
+//	}
+//	//have upper
+//	
+//	//reset Killables
+//	thisKillable.reset();
+//	iKillable.reset();
+//	
+//	BigInteger currentBestLower = PaUtils.bigIntAllOnes();
+//
+//	//which bits may be set to 0 on EITHER intervals
+//	for(int k = 31; k >= 0; k--){
+//		boolean thisMayBeZero = thisKillable.mayBeZero(k);
+//		boolean iMayBeZero = iKillable.mayBeZero(k);
+//		if(thisMayBeZero || iMayBeZero){
+//			if(thisMayBeZero && iMayBeZero) {
+//				thisKillable.selectOneOrZeroBit(k);
+//				iKillable.selectOneOrZeroBit(k);
+//			} else if(thisMayBeZero){
+//				thisKillable.selectZeroAtBit(k);
+//				iKillable.selectOneOrZeroBit(k);
+//			} else if(iMayBeZero){
+//				thisKillable.selectOneOrZeroBit(k);
+//				iKillable.selectZeroAtBit(k);
+//			}
+//			currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
+//		}
+//	}
+//	Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
+//	return moveIntoRange(result);
+//}
 }
