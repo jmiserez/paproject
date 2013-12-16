@@ -129,6 +129,10 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower * i.lower));
+		}
 		// TODO: Handle overflow.
 		long newLower = this.lower * i.lower, 
 			newUpper = this.upper * i.upper;
@@ -157,6 +161,10 @@ class Interval extends AbstractDomain {
 		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower / i.lower));
 		}
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
@@ -192,6 +200,10 @@ class Interval extends AbstractDomain {
 		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower % i.lower));
 		}
 
 		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
@@ -257,6 +269,11 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower & i.lower));
+		}
+		
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
 		long newUpper;
@@ -310,6 +327,10 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower | i.lower));
+		}
 		
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
@@ -328,10 +349,10 @@ class Interval extends AbstractDomain {
 			return moveIntoRange((Interval) this.copy());
 		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
 			//positive numbers 0... and 1...
-			return moveIntoRange(new Interval(Integer.MIN_VALUE,-1));
+			return moveIntoRange(new Interval(this.lower | Integer.MIN_VALUE, this.upper | Integer.MIN_VALUE));
 		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
 			//positive numbers 0... and 1...
-			return moveIntoRange(new Interval(Integer.MIN_VALUE,-1));
+			return moveIntoRange(new Interval(i.lower | Integer.MIN_VALUE, i.upper | Integer.MIN_VALUE));
 		} else if(this.lower >= 0 && i.lower >= 0){
 			//only positive numbers
 			candidates.add(this.lower);
@@ -351,9 +372,70 @@ class Interval extends AbstractDomain {
 		newUpper = Collections.max(candidates);
 		
 		return moveIntoRange(new Interval(newLower, newUpper));
-
 	}
 
+	public AbstractDomain xor(AbstractDomain a) {
+		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
+		if(isTop() || i.isTop()){
+			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(this.lower ^ i.lower));
+		}
+		
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
+		
+		candidates.add(this.lower);
+		candidates.add(this.upper);
+		candidates.add(i.lower);
+		candidates.add(i.upper);
+
+		if(this.lower == -1 && this.upper == -1){
+			return moveIntoRange(new Interval(~i.upper, ~i.lower));
+		}else if(i.lower == -1 && i.upper == -1){
+			return moveIntoRange(new Interval(~this.upper, ~this.lower));
+		} else if(this.lower == 0 && this.upper == 0){
+			return moveIntoRange((Interval) i.copy());
+		} else if(i.lower == 0 && i.upper == 0){
+			return moveIntoRange((Interval) this.copy());
+		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(i.lower ^ Integer.MIN_VALUE ,i.upper ^ Integer.MIN_VALUE));
+		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(this.lower ^ Integer.MIN_VALUE ,this.upper ^ Integer.MIN_VALUE));
+		} else if(this.lower <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			return moveIntoRange(new Interval(i.upper ^ Integer.MAX_VALUE ,i.lower ^ Integer.MAX_VALUE));
+		} else if(i.lower <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			return moveIntoRange(new Interval(this.upper ^ Integer.MAX_VALUE ,this.lower ^ Integer.MAX_VALUE));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(0L);
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(logAwayFromZero(this.upper));
+			candidates.add(logAwayFromZero(i.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add((long)Integer.MAX_VALUE);
+			candidates.add(0L);
+		} else {
+			return TOP.copy();
+		}
+		
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
+		
+		return moveIntoRange(new Interval(newLower, newUpper));
+	}
+	
 //	
 //	The complete 8-bit 2's complement integer range.
 //  ================================================
@@ -394,10 +476,10 @@ class Interval extends AbstractDomain {
 //	0000 1000 ->    8
 //	0000 1001 ->    9
 //	0000 1010 ->   10
-//	0000 1011 ->   11
+//	0000 1011 ->   11i.lower & li.lowei.lower & li.lower & lr & l
 //	0000 1100 ->   12
-//	0000 1101 ->   13
-//	0000 1110 ->   14
+//	0000 1101 ->   13 --> 0111 0010
+//	0000 1110 ->   14 --> 0111 0001
 //	0000 1111 ->   15
 //	0001 0000 ->   16
 //
@@ -405,56 +487,6 @@ class Interval extends AbstractDomain {
 //	0111 1101 ->  125
 //	0111 1110 ->  126
 //	0111 1111 ->  127 Integer.MAX_VALUE
-	
-	public AbstractDomain xor(AbstractDomain a) {
-		Interval i = (Interval) a;
-		handleOverflow(this); 
-		handleOverflow(i);
-		if(isTop() || i.isTop()){
-			return TOP.copy();
-		}
-//		ArrayList<Long> candidates = new ArrayList<Long>(8);
-//		long newLower;
-//		long newUpper;
-//		
-//		candidates.add(this.lower);
-//		candidates.add(this.upper);
-//		candidates.add(i.lower);
-//		candidates.add(i.upper);
-//
-//		if(this.lower >= 0 && i.lower >= 0){
-//			//only positive numbers
-//			candidates.add(this.lower);
-//			candidates.add(i.lower);
-//			candidates.add(i.upper | logAwayFromZero(this.upper));
-//			candidates.add(this.upper | logAwayFromZero(i.upper));
-//		} else if(this.upper <= -1 && i.upper <= -1){
-//			//only negative numbers
-//			candidates.add(this.lower);
-//			candidates.add(i.lower);
-//			candidates.add(-1L);
-//		} else if(this.lower == -1 && this.upper == -1 || i.lower == -1 && i.upper == -1){
-//			return moveIntoRange(new Interval(-1));
-//		} else if(this.lower == 0 && this.upper == 0){
-//			return moveIntoRange((Interval) i.copy());
-//		} else if(i.lower == 0 && i.upper == 0){
-//			return moveIntoRange((Interval) this.copy());
-//		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
-//			//positive numbers 0... and 1...
-//			return moveIntoRange(new Interval(Integer.MIN_VALUE,-1));
-//		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
-//			//positive numbers 0... and 1...
-//			return moveIntoRange(new Interval(Integer.MIN_VALUE,-1));
-//		} else {
-//			return TOP.copy();
-//		}
-//		
-//		newLower = Collections.min(candidates);
-//		newUpper = Collections.max(candidates);
-//		
-//		return moveIntoRange(new Interval(newLower, newUpper));
-		return TOP.copy();
-	}
 	
 	private AbstractDomain handleShift(AbstractDomain a, ShiftType type){
 		// Note: Shifting by x is actually defined as: 
@@ -467,6 +499,10 @@ class Interval extends AbstractDomain {
 		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
+		}
+		if(this.upper - this.lower == 0 && i.upper - i.lower == 0){
+			//constants
+			return moveIntoRange(new Interval(shift(this.lower,i.lower,type)));
 		}
 		long normalizedLower = i.lower & 0x1f;
 		long normalizedRange = Math.min(31, i.upper - i.lower);
