@@ -352,70 +352,6 @@ class Interval extends AbstractDomain {
 		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
-//	public AbstractDomain and(AbstractDomain a) {
-//		Interval i = (Interval) a;
-//		handleOverflow(this); 
-//		handleOverflow(i);	
-//		if(isTop() || i.isTop()){
-//			return TOP.copy();
-//		}
-//		KillableBitInterval thisKillable = new KillableBitInterval(this);
-//		KillableBitInterval iKillable = new KillableBitInterval(i);
-//		
-//		BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
-//		
-//		//which bits may be set to 1 on BOTH intervals
-//		for(int k = 31; k >= 0; k--){
-//			if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
-//				thisKillable.selectOneAtBit(k);
-//				iKillable.selectOneAtBit(k);
-//
-//				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
-//				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
-//				currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
-//			} else {
-//				if(thisKillable.mayBeOne(k)){
-//					thisKillable.selectOneOrZeroBit(k);
-//				}else{
-//					thisKillable.selectZeroAtBit(k);
-//				}
-//				if(iKillable.mayBeOne(k)){
-//					iKillable.selectOneOrZeroBit(k);
-//				}else{
-//					iKillable.selectZeroAtBit(k);
-//				}
-//			}
-//		}
-//		//have upper
-//		
-//		//reset Killables
-//		thisKillable.reset();
-//		iKillable.reset();
-//		
-//		BigInteger currentBestLower = PaUtils.bigIntAllOnes();
-//
-//		//which bits may be set to 0 on EITHER intervals
-//		for(int k = 31; k >= 0; k--){
-//			boolean thisMayBeZero = thisKillable.mayBeZero(k);
-//			boolean iMayBeZero = iKillable.mayBeZero(k);
-//			if(thisMayBeZero || iMayBeZero){
-//				if(thisMayBeZero && iMayBeZero) {
-//					thisKillable.selectOneOrZeroBit(k);
-//					iKillable.selectOneOrZeroBit(k);
-//				} else if(thisMayBeZero){
-//					thisKillable.selectZeroAtBit(k);
-//					iKillable.selectOneOrZeroBit(k);
-//				} else if(iMayBeZero){
-//					thisKillable.selectOneOrZeroBit(k);
-//					iKillable.selectZeroAtBit(k);
-//				}
-//				currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
-//			}
-//		}
-//		Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
-//		return moveIntoRange(result);
-//	}
-
 	public AbstractDomain or(AbstractDomain a) {
 		Interval i = (Interval) a;
 		handleOverflow(this); 
@@ -638,4 +574,67 @@ class Interval extends AbstractDomain {
 		return TOP.copy();
 	}
 	
+//	public AbstractDomain and(AbstractDomain a) {
+//	Interval i = (Interval) a;
+//	handleOverflow(this); 
+//	handleOverflow(i);	
+//	if(isTop() || i.isTop()){
+//		return TOP.copy();
+//	}
+//	KillableBitInterval thisKillable = new KillableBitInterval(this);
+//	KillableBitInterval iKillable = new KillableBitInterval(i);
+//	
+//	BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
+//	
+//	//which bits may be set to 1 on BOTH intervals
+//	for(int k = 31; k >= 0; k--){
+//		if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
+//			thisKillable.selectOneAtBit(k);
+//			iKillable.selectOneAtBit(k);
+//
+//			// we "select" this bit to be set in both this and i. Then we can discard all other ranges
+//			// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
+//			currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
+//		} else {
+//			if(thisKillable.mayBeOne(k)){
+//				thisKillable.selectOneOrZeroBit(k);
+//			}else{
+//				thisKillable.selectZeroAtBit(k);
+//			}
+//			if(iKillable.mayBeOne(k)){
+//				iKillable.selectOneOrZeroBit(k);
+//			}else{
+//				iKillable.selectZeroAtBit(k);
+//			}
+//		}
+//	}
+//	//have upper
+//	
+//	//reset Killables
+//	thisKillable.reset();
+//	iKillable.reset();
+//	
+//	BigInteger currentBestLower = PaUtils.bigIntAllOnes();
+//
+//	//which bits may be set to 0 on EITHER intervals
+//	for(int k = 31; k >= 0; k--){
+//		boolean thisMayBeZero = thisKillable.mayBeZero(k);
+//		boolean iMayBeZero = iKillable.mayBeZero(k);
+//		if(thisMayBeZero || iMayBeZero){
+//			if(thisMayBeZero && iMayBeZero) {
+//				thisKillable.selectOneOrZeroBit(k);
+//				iKillable.selectOneOrZeroBit(k);
+//			} else if(thisMayBeZero){
+//				thisKillable.selectZeroAtBit(k);
+//				iKillable.selectOneOrZeroBit(k);
+//			} else if(iMayBeZero){
+//				thisKillable.selectOneOrZeroBit(k);
+//				iKillable.selectZeroAtBit(k);
+//			}
+//			currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
+//		}
+//	}
+//	Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
+//	return moveIntoRange(result);
+//}
 }
