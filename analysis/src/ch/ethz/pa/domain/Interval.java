@@ -209,25 +209,25 @@ class Interval extends AbstractDomain {
 			//this is 0
 			return moveIntoRange(new Interval(0));
 		}
-		return TOP.copy();
 		
-//		long range = this.upper - this.lower;
+		long range = this.upper - this.lower;
 
-//		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
-//		
-//		long newUpper = maxAbsRemainder;
-//		if(this.upper < maxAbsRemainder){
-//			newUpper = this.upper;
-//		}
-//
-//		// negative remainders only happen for negative this
-//		long thisMin = Math.min(0, Math.min(this.lower, this.upper));
-//			
-//		long newLower = -maxAbsRemainder; //default case
-//		if(thisMin < -maxAbsRemainder){
-//			newLower = -thisMin; // case where a is larger then this, e.g. 5 % 20
-//		}
-//		return moveIntoRange(new Interval(newLower, newUpper));
+		long maxAbsRemainder = Math.max(0, Math.max(Math.abs(i.lower), Math.abs(i.upper))-1);
+		
+		long newUpper = maxAbsRemainder;
+		if(this.upper < maxAbsRemainder){
+			//max possible remainder is > than number
+			newUpper = this.upper;
+		}
+		long newLower = maxAbsRemainder * -1;
+		if(this.lower >= 0){
+			newLower = 0;
+			if(this.lower < maxAbsRemainder){
+				newLower = this.lower;
+			}
+		}
+		
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
 	public AbstractDomain neg() {

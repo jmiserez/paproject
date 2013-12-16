@@ -13,7 +13,7 @@ import soot.toolkits.graph.LoopNestTree;
 
 public class Verifier {
 	
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	
 	public static void main(String[] args) {
 		if (args.length != 1) {
