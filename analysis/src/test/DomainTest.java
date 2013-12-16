@@ -88,6 +88,8 @@ public class DomainTest {
 
 	private void testBitwiseSoundness(int op){
 		//test all 8-bit integers
+		int tops = 0;
+		int all = 0;
 		ArrayList<Domain> testObjs = new ArrayList<Domain>();
 		int max = (1 << 8) - 1;
 		int min = (1 << 8) * -1;
@@ -134,10 +136,15 @@ public class DomainTest {
 							break;
 						}
 						assertTrue(r.contains(new Domain(rVal)));
+						if(r.isTop()){
+							tops++;
+						}
+						all++;
 					}
 				}
 			}
 		}
+		assertTrue(tops < all); // don't just go to top
 	}
 	
 	
