@@ -5,7 +5,7 @@ public class TestSimpleGen11_376_at_testM_OK_4{
   public static void testM_OK_4() {
     int start = 0;
     // start = [0,0]  (checked values 0 0 0)
-    for (int i0 = 99; i0 <= 101; ++i0) {
+    int i0 = 99;
       int x1 = start % i0;
       // x1 = [0,0]  (checked values 0 0 0)
       int index2 = 0;
@@ -17,7 +17,6 @@ public class TestSimpleGen11_376_at_testM_OK_4{
       if (x1 == -1) { index2 = -1000; }
       if (x1 == 1) { index2 = 1000; }
       new AircraftControl().adjustValue(11, index2);
-    }
   }
 
   // Test method with AboveEnd array accesses
