@@ -97,8 +97,8 @@ public class DomainTest {
 //				testObjs.add(new Domain(l,u));
 //			}
 //		}
-		testObjs1.add(new Domain(3,3));
-		testObjs2.add(new Domain(3,3));
+		testObjs1.add(new Domain(3,8));
+		testObjs2.add(new Domain(3,8));
 
 		Iterator<Domain> i1 = testObjs1.iterator();
 		Iterator<Domain> i2 = testObjs2.iterator();
@@ -129,6 +129,7 @@ public class DomainTest {
 						switch(op){
 						case 1:
 							rVal = aVal & bVal;
+							System.out.println(aVal+" & "+bVal+" = "+r+" ("+rVal+")");
 							break;
 						case 2:
 							rVal = aVal | bVal;
@@ -137,7 +138,6 @@ public class DomainTest {
 							rVal = aVal ^ bVal;
 							break;
 						}
-						System.out.println(aVal+" & "+bVal+" = "+r+" ("+rVal+")");
 						assertTrue(r.contains(new Domain(rVal)));
 					}
 				}

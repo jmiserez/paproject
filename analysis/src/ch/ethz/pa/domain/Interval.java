@@ -14,7 +14,7 @@ import soot.toolkits.scalar.Pair;
  */
 class Interval extends AbstractDomain {
 	
-	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = false;
+	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = true;
 	public static int BITWISE_PRECISENESS = 8; //higher is better, but exponentially slower
 	
 	// TODO: Do you need to handle infinity or empty interval?
@@ -322,7 +322,6 @@ class Interval extends AbstractDomain {
 				BigInteger elemLower = elem.getO1().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
 				BigInteger elemUpper = elem.getO2().and(new BigInteger("1").shiftLeft(k).not()); //unset the k-th bit
 				
-				splitListToAddTo.remove(elem);
 				HashMap<Integer, Pair<BigInteger, BigInteger>> currentSplit = split(new Pair<BigInteger, BigInteger>(elemLower, elemUpper));
 				for(int m = 0; m < 32; m++){
 					splitListToAddTo.get(m).add(currentSplit.get(m));
@@ -401,11 +400,13 @@ class Interval extends AbstractDomain {
 			}
 			if(nonNullEntries(thisSplitList.get(k)).size() > 0){
 				//we need to kill the bit in each of the splits and add the remainders to the splits list
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = thisSplitList.get(k);
+				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
+				thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				killBitSubrange(killBitCandidates, k, thisSplitList);
 			}
 			if(nonNullEntries(iSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = iSplitList.get(k);
+				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
+				iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				killBitSubrange(killBitCandidates, k, iSplitList);
 
 			}
@@ -439,11 +440,13 @@ class Interval extends AbstractDomain {
 				highestZeroBit = k; //there is a zero here
 			}
 			if(nonNullEntries(thisSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = thisSplitList.get(k);
+				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
+				thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				killBitSubrange(killBitCandidates, k, thisSplitList);
 			}
 			if(nonNullEntries(iSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = iSplitList.get(k);
+				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
+				iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				killBitSubrange(killBitCandidates, k, iSplitList);
 			}
 			if(highestZeroBit >= 0){
