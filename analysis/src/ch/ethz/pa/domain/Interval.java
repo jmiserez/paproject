@@ -290,16 +290,20 @@ class Interval extends AbstractDomain {
 		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
 			//positive numbers 0... and 1...
 			return moveIntoRange(new Interval(0));
-		} else if(this.lower <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+		} else if(this.upper <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
 			//negative numbers 1... and 0...
 			long max = this.upper & Integer.MAX_VALUE;
 			long min = this.lower & Integer.MAX_VALUE;
 			return moveIntoRange(new Interval(min,max));
-		} else if(i.lower <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+		} else if(i.upper <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
 			//negative numbers 1... and 0...
 			long max = i.upper & Integer.MAX_VALUE;
 			long min = i.lower & Integer.MAX_VALUE;
 			return moveIntoRange(new Interval(min,max));
+		} else if(this.lower >=0 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			return moveIntoRange(new Interval(0));
+		} else if(i.upper >= 0 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			return moveIntoRange(new Interval(0));
 		} else if(this.lower >= 0 && i.lower >= 0){
 			//only positive numbers
 			candidates.add(0L);  //AND can go this far down
@@ -409,10 +413,10 @@ class Interval extends AbstractDomain {
 		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
 			//positive numbers 0... and 1...
 			return moveIntoRange(new Interval(this.lower ^ Integer.MIN_VALUE ,this.upper ^ Integer.MIN_VALUE));
-		} else if(this.lower <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+		} else if(this.upper <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
 			//negative numbers 1... and 0...
 			return moveIntoRange(new Interval(i.upper ^ Integer.MAX_VALUE ,i.lower ^ Integer.MAX_VALUE));
-		} else if(i.lower <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+		} else if(i.upper <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
 			//negative numbers 1... and 0...
 			return moveIntoRange(new Interval(this.upper ^ Integer.MAX_VALUE ,this.lower ^ Integer.MAX_VALUE));
 		} else if(this.lower >= 0 && i.lower >= 0){

@@ -74,6 +74,20 @@ public class DomainTest {
 	}
 	
 	@Test
+	public void testDivision(){
+		assertEquals(new Domain(1, 1), new Domain(1, 1).divide(new Domain(1, 1)));
+		assertEquals(new Domain(-1, 1), new Domain(-1, 1).divide(new Domain(-1, 1)));
+		assertEquals(new Domain(-16,8), new Domain(16, 4).divide(new Domain(-1, 2)));
+	}
+	
+	@Test
+	public void testRemainder(){
+		assertEquals(new Domain(0, 0), new Domain(1, 1).rem(new Domain(1, 1)));
+		assertEquals(new Domain(-1, 1), new Domain(-2, 2).rem(new Domain(-1, 1)));
+		assertEquals(new Domain(-1, 1), new Domain(16, 4).rem(new Domain(-3, 5)));
+	}
+	
+	@Test
 	public void testBitwiseAnd1(){
 		Domain a = new Domain(-16, -16);
 		Domain b = new Domain(-16, 0);
