@@ -214,6 +214,7 @@ class Interval extends AbstractDomain {
 	}
 	
 	public AbstractDomain neg() {
+		handleOverflow(this); 
 		if(isTop()){
 			return TOP.copy();
 		}
@@ -376,9 +377,12 @@ class Interval extends AbstractDomain {
 	
 	public AbstractDomain and(AbstractDomain a) {
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);	
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+
 		
 		Pair<BigInteger, BigInteger> thisBig = this.transposeToUnsignedBigInt();
 		Pair<BigInteger, BigInteger> iBig = i.transposeToUnsignedBigInt();
@@ -487,11 +491,13 @@ class Interval extends AbstractDomain {
 		}
 		
 		Interval result = transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
-		return handleOverflow(result);
+		return moveIntoRange(result);
 	}
 
 	public AbstractDomain or(AbstractDomain a) {
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -501,6 +507,8 @@ class Interval extends AbstractDomain {
 
 	public AbstractDomain xor(AbstractDomain a) {
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -514,6 +522,8 @@ class Interval extends AbstractDomain {
 		// ref: http://stackoverflow.com/questions/10516786/shifted-by-negative-number-in-java
 		// 
 		Interval i = (Interval) a;
+		handleOverflow(this); 
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
@@ -543,7 +553,7 @@ class Interval extends AbstractDomain {
 		}
 		newLower = Collections.min(candidates);
 		newUpper = Collections.max(candidates);
-		return handleOverflow(new Interval(newLower, newUpper));
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 
 	public AbstractDomain shl(AbstractDomain a) {
@@ -699,7 +709,6 @@ class Interval extends AbstractDomain {
 	
 	@Override
 	public AbstractDomain widen(int directionality) {
-		Interval result = (Interval) this.copy();
 		return TOP.copy();
 	}
 	
