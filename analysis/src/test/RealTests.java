@@ -1,15 +1,13 @@
 package test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import test.util.CloneOutputStream;
-import ch.ethz.pa.Analysis;
 import ch.ethz.pa.Verifier;
 
 public class RealTests {

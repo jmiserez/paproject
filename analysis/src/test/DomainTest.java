@@ -3,6 +3,9 @@ package test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,7 +72,83 @@ public class DomainTest {
 		assertEquals(new Domain(-1, 1), new Domain(-1, 1).multiply(new Domain(1, 1)));
 		assertEquals(new Domain(1, 1), new Domain(-1, -1).multiply(new Domain(-1, -1)));
 	}
+	
+	@Test
+	public void testBitwiseSoundnessAnd(){
+		testBitwiseSoundness(1);
+	}
+	@Test
+	public void testBitwiseSoundnessOr(){
+		testBitwiseSoundness(2);
+	}
+	@Test
+	public void testBitwiseSoundnessXor(){
+		testBitwiseSoundness(3);
+	}
 
+	private void testBitwiseSoundness(int op){
+		//test all 8-bit integers
+		int tops = 0;
+		int all = 0;
+		ArrayList<Domain> testObjs = new ArrayList<Domain>();
+		int max = (1 << 8) - 1;
+		int min = (1 << 8) * -1;
+		for(int l = min; l <= max; l++){
+			for(int u = min; l <= max; l++){
+				testObjs.add(new Domain(l,u));
+			}
+		}
+
+		Iterator<Domain> i1 = testObjs.iterator();
+		Iterator<Domain> i2 = testObjs.iterator();
+		while(i1.hasNext()){
+			Domain a = i1.next();
+			while(i2.hasNext()){
+				Domain b = i2.next();
+				//16*16 combinations
+				AbstractDomain r = null;
+				switch(op){
+				case 1:
+					r = a.copy().and(b.copy());
+					break;
+				case 2:
+					r = a.copy().or(b.copy());
+					break;
+				case 3:
+					r = a.copy().xor(b.copy());
+					break;
+				}
+				int aStart = a.getLower();
+				int aEnd = a.getUpper();
+				int bStart =  b.getLower();
+				int bEnd = b.getUpper();
+				for(int aVal = aStart; aVal <= aEnd; aVal++){
+					for(int bVal = bStart; bVal <= bEnd; bVal++){
+						int rVal = 0;
+						switch(op){
+						case 1:
+							rVal = aVal & bVal;
+						case 2:
+							rVal = aVal | bVal;
+							break;
+						case 3:
+							rVal = aVal ^ bVal;
+							break;
+						}
+						assertTrue(r.contains(new Domain(rVal)));
+						if(r.isTop()){
+							tops++;
+						}
+						all++;
+					}
+				}
+			}
+		}
+		assertTrue(tops < all); // don't just go to top
+	}
+	
+	
+	
 	@Test
 	public void testJoin() {
 		assertEquals(new Domain(1, 1), new Domain(1, 1).join(new Domain(1, 1)));
