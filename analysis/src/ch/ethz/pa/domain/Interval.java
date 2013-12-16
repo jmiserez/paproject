@@ -14,7 +14,7 @@ import soot.toolkits.scalar.Pair;
  */
 class Interval extends AbstractDomain {
 	
-	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = true;
+	public static boolean BITWISE_SLOW_BUT_MAXIMALLY_PRECISE = false;
 	
 	// TODO: Do you need to handle infinity or empty interval?
 	private final static long MIN_VALUE = Integer.MIN_VALUE;
@@ -305,6 +305,35 @@ class Interval extends AbstractDomain {
 				HashMap<Integer, Pair<BigInteger, BigInteger>> currentSplit = split(new Pair<BigInteger, BigInteger>(elemLower, elemUpper));
 				for(int m = 0; m < 32; m++){
 					splitListToAddTo.get(m).add(currentSplit.get(m));
+				}
+			}
+		}
+		if(!BITWISE_SLOW_BUT_MAXIMALLY_PRECISE){
+			// need to reduce the number of splits in the list. Otherwise our runtime is O(n!), where n is the number of bits in an integer.
+			//
+			// Here we just fudge the results and merge all ranges together. E.g.:
+			//			
+			// [0000,0000], [0100,0101] -> would result in [0000,0101], although that is clearly not precise.
+			//			
+			for(int m = 0; m < 32; m++){
+				// note that this adds impreciseness as described in the paper.
+				ArrayList<Pair<BigInteger, BigInteger>> listToMerge = splitListToAddTo.get(m);
+				Pair<BigInteger, BigInteger> newBounds = null;
+				for(Pair<BigInteger, BigInteger> elem : listToMerge){
+					if(elem != null){
+						if(newBounds == null){
+							newBounds = new Pair<BigInteger, BigInteger>(elem.getO1(), elem.getO2());
+						} else {
+							BigInteger l = elem.getO1();
+							BigInteger u = elem.getO2();
+							if(l.compareTo(newBounds.getO1()) < 0){
+								newBounds.setO1(l);
+							}
+							if(u.compareTo(newBounds.getO2()) > 0){
+								newBounds.setO2(u);
+							}
+						}
+					}
 				}
 			}
 		}
