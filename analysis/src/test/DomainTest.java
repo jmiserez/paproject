@@ -77,7 +77,8 @@ public class DomainTest {
 	public void testDivision(){
 		assertEquals(new Domain(1, 1), new Domain(1, 1).divide(new Domain(1, 1)));
 		assertEquals(new Domain(-1, 1), new Domain(-1, 1).divide(new Domain(-1, 1)));
-		assertEquals(new Domain(-16,8), new Domain(16, 4).divide(new Domain(-1, 2)));
+		assertEquals(new Domain(-16,16), new Domain(16, 4).divide(new Domain(-1, 2)));
+		assertEquals(new Domain(4/3,16), new Domain(16, 4).divide(new Domain(1, 3)));
 	}
 	
 	@Test
