@@ -88,20 +88,17 @@ public class DomainTest {
 
 	private void testBitwiseSoundness(int op){
 		//test all 8-bit integers
-		ArrayList<Domain> testObjs1 = new ArrayList<Domain>();
-		ArrayList<Domain> testObjs2 = new ArrayList<Domain>();
-//		int max = (1 << 8) - 1;
-//		int min = (1 << 8) * -1;
-//		for(int l = min; l <= max; l++){
-//			for(int u = min; l <= max; l++){
-//				testObjs.add(new Domain(l,u));
-//			}
-//		}
-		testObjs1.add(new Domain(3,8));
-		testObjs2.add(new Domain(3,8));
+		ArrayList<Domain> testObjs = new ArrayList<Domain>();
+		int max = (1 << 8) - 1;
+		int min = (1 << 8) * -1;
+		for(int l = min; l <= max; l++){
+			for(int u = min; l <= max; l++){
+				testObjs.add(new Domain(l,u));
+			}
+		}
 
-		Iterator<Domain> i1 = testObjs1.iterator();
-		Iterator<Domain> i2 = testObjs2.iterator();
+		Iterator<Domain> i1 = testObjs.iterator();
+		Iterator<Domain> i2 = testObjs.iterator();
 		while(i1.hasNext()){
 			Domain a = i1.next();
 			while(i2.hasNext()){
@@ -129,8 +126,6 @@ public class DomainTest {
 						switch(op){
 						case 1:
 							rVal = aVal & bVal;
-							System.out.println(aVal+" & "+bVal+" = "+r+" ("+rVal+")");
-							break;
 						case 2:
 							rVal = aVal | bVal;
 							break;

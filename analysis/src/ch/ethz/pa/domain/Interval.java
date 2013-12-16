@@ -327,7 +327,9 @@ class Interval extends AbstractDomain {
 					if(splitListToAddTo.get(m) == null){
 						splitListToAddTo.put(m, new ArrayList<Pair<BigInteger, BigInteger>>());
 					}
-					splitListToAddTo.get(m).add(currentSplit.get(m));
+					if(currentSplit.get(m) != null){
+						splitListToAddTo.get(m).add(currentSplit.get(m));
+					}
 				}
 			}
 		}
@@ -404,13 +406,11 @@ class Interval extends AbstractDomain {
 			if(nonNullEntries(thisSplitList.get(k)).size() > 0){
 				//we need to kill the bit in each of the splits and add the remainders to the splits list
 				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
-//				thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				thisSplitList.clear();
 				killBitSubrange(killBitCandidates, k, thisSplitList);
 			}
 			if(nonNullEntries(iSplitList.get(k)).size() > 0){
 				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
-//				iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
 				iSplitList.clear();
 				killBitSubrange(killBitCandidates, k, iSplitList);
 
@@ -441,20 +441,34 @@ class Interval extends AbstractDomain {
 		//which bits may be set to 0 on EITHER interval
 		for(int k = 31; k >= 0; k--){
 			int highestZeroBit = -1; //00 is first bit
-			if(nonNullEntries(thisSplitList.get(k)).size() == 0 || nonNullEntries(iSplitList.get(k)).size() == 0){
+			
+			boolean splitListhasEntriesForSmallerK = false;
+			if(k > 0){
+				for(int m = k-1; m >= 0; m--){
+					if(nonNullEntries(thisSplitList.get(m)).size() != 0 || nonNullEntries(iSplitList.get(m)).size() != 0){
+						splitListhasEntriesForSmallerK = true;
+						break;
+					}
+				}
+			}
+			
+			if(splitListhasEntriesForSmallerK || nonNullEntries(thisSplitList.get(k)).size() == 0 || nonNullEntries(iSplitList.get(k)).size() == 0){
 				highestZeroBit = k; //there is a zero here
-			}
-			if(nonNullEntries(thisSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
-//				thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
-				thisSplitList.clear();
-				killBitSubrange(killBitCandidates, k, thisSplitList);
-			}
-			if(nonNullEntries(iSplitList.get(k)).size() > 0){
-				ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
-//				iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
-				iSplitList.clear();
-				killBitSubrange(killBitCandidates, k, iSplitList);
+				//discard all ones
+				thisSplitList.get(k).clear();
+				iSplitList.get(k).clear();
+			} else {
+				//killBit
+				if(nonNullEntries(thisSplitList.get(k)).size() > 0){
+					ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(thisSplitList.get(k));
+					thisSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
+					killBitSubrange(killBitCandidates, k, thisSplitList);
+				}
+				if(nonNullEntries(iSplitList.get(k)).size() > 0){
+					ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(iSplitList.get(k));
+					iSplitList.get(k).removeAll(nonNullEntries(killBitCandidates));
+					killBitSubrange(killBitCandidates, k, iSplitList);
+				}
 			}
 			if(highestZeroBit >= 0){
 				// we "select" this bit to be not set in both this and i. Then we can discard all other ranges
