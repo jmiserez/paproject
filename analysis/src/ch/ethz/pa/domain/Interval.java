@@ -1,12 +1,8 @@
 package ch.ethz.pa.domain;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 
-import ch.ethz.pa.util.PaUtils;
 import soot.jimple.ConditionExpr;
 import soot.toolkits.scalar.Pair;
 
@@ -265,17 +261,7 @@ class Interval extends AbstractDomain {
 		long newLower;
 		long newUpper;
 		
-		if(this.lower >= 0 && i.lower >= 0){
-			//only positive numbers
-			candidates.add(0L);  //AND can go this far down
-			candidates.add(this.upper & logAwayFromZero(i.upper));
-			candidates.add(i.upper & logAwayFromZero(this.upper));
-		} else if(this.upper <= -1 && i.upper <= -1){
-			//only negative numbers
-			candidates.add(~0L);  //AND can go this far up
-			candidates.add(this.lower & logAwayFromZero(i.lower));
-			candidates.add(i.lower & logAwayFromZero(this.lower));
-		} else if(this.lower == 0 && this.upper == 0 || i.lower == 0 && i.upper == 0){
+		if(this.lower == 0 && this.upper == 0 || i.lower == 0 && i.upper == 0){
 			return moveIntoRange(new Interval(0));
 		} else if(this.lower == -1 && this.upper == -1){
 			return moveIntoRange((Interval) i.copy());
@@ -297,6 +283,16 @@ class Interval extends AbstractDomain {
 			long max = i.upper & Integer.MAX_VALUE;
 			long min = i.lower & Integer.MAX_VALUE;
 			return moveIntoRange(new Interval(min,max));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(0L);  //AND can go this far down
+			candidates.add(this.upper & logAwayFromZero(i.upper));
+			candidates.add(i.upper & logAwayFromZero(this.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add(~0L);  //AND can go this far up
+			candidates.add(this.lower & logAwayFromZero(i.lower));
+			candidates.add(i.lower & logAwayFromZero(this.lower));
 		} else {
 			return TOP.copy();
 		}
@@ -314,6 +310,7 @@ class Interval extends AbstractDomain {
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
+		
 		ArrayList<Long> candidates = new ArrayList<Long>(8);
 		long newLower;
 		long newUpper;
@@ -323,18 +320,7 @@ class Interval extends AbstractDomain {
 		candidates.add(i.lower);
 		candidates.add(i.upper);
 
-		if(this.lower >= 0 && i.lower >= 0){
-			//only positive numbers
-			candidates.add(this.lower);
-			candidates.add(i.lower);
-			candidates.add(i.upper | logAwayFromZero(this.upper));
-			candidates.add(this.upper | logAwayFromZero(i.upper));
-		} else if(this.upper <= -1 && i.upper <= -1){
-			//only negative numbers
-			candidates.add(this.lower);
-			candidates.add(i.lower);
-			candidates.add(-1L);
-		} else if(this.lower == -1 && this.upper == -1 || i.lower == -1 && i.upper == -1){
+		if(this.lower == -1 && this.upper == -1 || i.lower == -1 && i.upper == -1){
 			return moveIntoRange(new Interval(-1));
 		} else if(this.lower == 0 && this.upper == 0){
 			return moveIntoRange((Interval) i.copy());
@@ -346,6 +332,17 @@ class Interval extends AbstractDomain {
 		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
 			//positive numbers 0... and 1...
 			return moveIntoRange(new Interval(Integer.MIN_VALUE,-1));
+		} else if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(i.upper | logAwayFromZero(this.upper));
+			candidates.add(this.upper | logAwayFromZero(i.upper));
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add(this.lower);
+			candidates.add(i.lower);
+			candidates.add(-1L);
 		} else {
 			return TOP.copy();
 		}

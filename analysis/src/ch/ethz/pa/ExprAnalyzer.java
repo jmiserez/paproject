@@ -173,15 +173,15 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 		doCondExpr(v);
 	}
 	
-//	@Override
-//	public void caseAndExpr(AndExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).and(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseAndExpr(AndExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).and(valueToInterval(v.getOp2())));
+	}
 	
-//	@Override
-//	public void caseOrExpr(OrExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).or(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseOrExpr(OrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).or(valueToInterval(v.getOp2())));
+	}
 	
 //	@Override
 //	public void caseXorExpr(XorExpr v) {
@@ -193,20 +193,20 @@ public class ExprAnalyzer extends AbstractJimpleValueSwitch {
 //		result.copyFrom(valueToInterval(v.getOp()).neg());
 //	}
 	
-//	@Override
-//	public void caseShlExpr(ShlExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).shl(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseShlExpr(ShlExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).shl(valueToInterval(v.getOp2())));
+	}
 
-//	@Override
-//	public void caseShrExpr(ShrExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).shr(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseShrExpr(ShrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).shr(valueToInterval(v.getOp2())));
+	}
 
-//	@Override
-//	public void caseUshrExpr(UshrExpr v) {
-//		result.copyFrom(valueToInterval(v.getOp1()).ushr(valueToInterval(v.getOp2())));
-//	}
+	@Override
+	public void caseUshrExpr(UshrExpr v) {
+		result.copyFrom(valueToInterval(v.getOp1()).ushr(valueToInterval(v.getOp2())));
+	}
 	
 	/**
 	 * This is the case where the the value is actually read into some variable, i.e.:
