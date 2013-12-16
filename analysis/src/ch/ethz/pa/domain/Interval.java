@@ -233,65 +233,188 @@ class Interval extends AbstractDomain {
 		return moveIntoRange(new Interval(newLower, newUpper));
 	}
 	
+//	
+//	The complete 8-bit 2's complement integer range.
+//  ================================================
+//	
+//	Dealing with unsigned values for bitwise operations:
+//	 - unsigned: result = a OP b
+//	 - signed:   result = ~(~a OP ~b)
+//	
+//  1000 0000 -> -128 Integer.MIN_VALUE
+//	1000 0001 -> -127 
+//	1000 0010 -> -126 
+//	1111 0000 ->  -16
+//	
+//	1111 0001 ->  -15 
+//	1111 0010 ->  -14
+//	1111 0011 ->  -13
+//	1111 0100 ->  -12
+//	1111 0101 ->  -11
+//	1111 0110 ->  -10
+//	1111 0111 ->   -9
+//	1111 1000 ->   -8
+//	1111 1001 ->   -7
+//	1111 1010 ->   -6
+//	1111 1011 ->   -5
+//	1111 1100 ->   -4
+//	1111 1101 ->   -3
+//	1111 1110 ->   -2
+//	1111 1111 ->   -1
+//	
+//	0000 0000 ->    0
+//	0000 0001 ->    1
+//	0000 0010 ->    2
+//	0000 0011 ->    3
+//	0000 0100 ->    4
+//	0000 0101 ->    5
+//	0000 0110 ->    6
+//	0000 0111 ->    7
+//	0000 1000 ->    8
+//	0000 1001 ->    9
+//	0000 1010 ->   10
+//	0000 1011 ->   11
+//	0000 1100 ->   12
+//	0000 1101 ->   13
+//	0000 1110 ->   14
+//	0000 1111 ->   15
+//	0001 0000 ->   16
+//
+//	0111 1100 ->  124
+//	0111 1101 ->  125
+//	0111 1110 ->  126
+//	0111 1111 ->  127 Integer.MAX_VALUE
+	
+	@Override
 	public AbstractDomain and(AbstractDomain a) {
 		Interval i = (Interval) a;
 		handleOverflow(this); 
-		handleOverflow(i);	
+		handleOverflow(i);
 		if(isTop() || i.isTop()){
 			return TOP.copy();
 		}
-		KillableBitInterval thisKillable = new KillableBitInterval(this);
-		KillableBitInterval iKillable = new KillableBitInterval(i);
+		ArrayList<Long> candidates = new ArrayList<Long>(8);
+		long newLower;
+		long newUpper;
 		
-		BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
-		
-		//which bits may be set to 1 on BOTH intervals
-		for(int k = 31; k >= 0; k--){
-			if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
-				thisKillable.selectOneAtBit(k);
-				iKillable.selectOneAtBit(k);
+		candidates.add(this.lower);
+		candidates.add(this.upper);
+		candidates.add(i.lower);
+		candidates.add(i.upper);
 
-				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
-				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
-				currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
-			} else {
-				if(thisKillable.mayBeOne(k)){
-					thisKillable.selectOneOrZeroBit(k);
-				}
-				if(iKillable.mayBeOne(k)){
-					iKillable.selectOneOrZeroBit(k);
-				}
-			}
+		if(this.lower >= 0 && i.lower >= 0){
+			//only positive numbers
+			candidates.add(0L);  //AND can go this far down
+			candidates.add(this.upper);
+			candidates.add(i.upper);
+			long thisFloorLog2 = (Long.highestOneBit(this.upper) << 1) - 1;
+			long iFloorLog2 = (Long.highestOneBit(i.upper) << 1) - 1;
+			candidates.add(thisFloorLog2);
+			candidates.add(iFloorLog2);
+		} else if(this.upper <= -1 && i.upper <= -1){
+			//only negative numbers
+			candidates.add(~0L);  //AND can go this far up
+			candidates.add(~this.lower);
+			candidates.add(~i.lower);
+			long thisCeilLog2 = ~((Long.highestOneBit(~this.lower) << 1) - 1);
+			long iCeilLog2 = ~((Long.highestOneBit(~i.lower) << 1) - 1);
+			candidates.add(thisCeilLog2);
+			candidates.add(iCeilLog2);
+		} else if(this.lower == 0 && this.upper == 0 || i.lower == 0 && i.upper == 0){
+			return moveIntoRange(new Interval(0));
+		} else if(this.lower == -1 && this.upper == -1){
+			return moveIntoRange((Interval) i.copy());
+		} else if(i.lower == -1 && i.upper == -1){
+			return moveIntoRange((Interval) this.copy());
+		} else if(this.lower >= 0 && i.lower == Integer.MIN_VALUE && i.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(0));
+		} else if(i.lower >= 0 && this.lower == Integer.MIN_VALUE && this.upper == Integer.MIN_VALUE){
+			//positive numbers 0... and 1...
+			return moveIntoRange(new Interval(0));
+		} else if(this.lower <= -1 && i.lower == Integer.MAX_VALUE && i.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			long max = this.upper & Integer.MAX_VALUE;
+			long min = this.lower & Integer.MAX_VALUE;
+			return moveIntoRange(new Interval(min,max));
+		} else if(i.lower <= -1 && this.lower == Integer.MAX_VALUE && this.upper == Integer.MAX_VALUE){
+			//negative numbers 1... and 0...
+			long max = i.upper & Integer.MAX_VALUE;
+			long min = i.lower & Integer.MAX_VALUE;
+			return moveIntoRange(new Interval(min,max));
+		} else {
+			return TOP.copy();
 		}
-		//have upper
 		
-		//reset Killables
-		thisKillable.reset();
-		iKillable.reset();
+		newLower = Collections.min(candidates);
+		newUpper = Collections.max(candidates);
 		
-		BigInteger currentBestLower = PaUtils.bigIntAllOnes();
-
-		//which bits may be set to 0 on EITHER intervals
-		for(int k = 31; k >= 0; k--){
-			boolean thisMayBeZero = thisKillable.mayBeZero(k);
-			boolean iMayBeZero = iKillable.mayBeZero(k);
-			if(thisMayBeZero || iMayBeZero){
-				if(thisMayBeZero && iMayBeZero) {
-					thisKillable.selectOneOrZeroBit(k);
-					iKillable.selectOneOrZeroBit(k);
-				} else if(thisMayBeZero){
-					thisKillable.selectZeroAtBit(k);
-					iKillable.selectOneAtBit(k);
-				} else if(iMayBeZero){
-					thisKillable.selectOneAtBit(k);
-					iKillable.selectZeroAtBit(k);
-				}
-				currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
-			}
-		}
-		Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
-		return moveIntoRange(result);
+		return moveIntoRange(new Interval(newLower, newUpper));
 	}
+	
+//	public AbstractDomain and(AbstractDomain a) {
+//		Interval i = (Interval) a;
+//		handleOverflow(this); 
+//		handleOverflow(i);	
+//		if(isTop() || i.isTop()){
+//			return TOP.copy();
+//		}
+//		KillableBitInterval thisKillable = new KillableBitInterval(this);
+//		KillableBitInterval iKillable = new KillableBitInterval(i);
+//		
+//		BigInteger currentBestUpper = PaUtils.bigIntAllZeros();
+//		
+//		//which bits may be set to 1 on BOTH intervals
+//		for(int k = 31; k >= 0; k--){
+//			if(thisKillable.mayBeOne(k) && iKillable.mayBeOne(k)){
+//				thisKillable.selectOneAtBit(k);
+//				iKillable.selectOneAtBit(k);
+//
+//				// we "select" this bit to be set in both this and i. Then we can discard all other ranges
+//				// now assuming that there are no further matches, we can update our currentBestResult to be filled with a one at the matching position
+//				currentBestUpper = PaUtils.bigIntSetKthBitToOne(currentBestUpper, k);
+//			} else {
+//				if(thisKillable.mayBeOne(k)){
+//					thisKillable.selectOneOrZeroBit(k);
+//				}else{
+//					thisKillable.selectZeroAtBit(k);
+//				}
+//				if(iKillable.mayBeOne(k)){
+//					iKillable.selectOneOrZeroBit(k);
+//				}else{
+//					iKillable.selectZeroAtBit(k);
+//				}
+//			}
+//		}
+//		//have upper
+//		
+//		//reset Killables
+//		thisKillable.reset();
+//		iKillable.reset();
+//		
+//		BigInteger currentBestLower = PaUtils.bigIntAllOnes();
+//
+//		//which bits may be set to 0 on EITHER intervals
+//		for(int k = 31; k >= 0; k--){
+//			boolean thisMayBeZero = thisKillable.mayBeZero(k);
+//			boolean iMayBeZero = iKillable.mayBeZero(k);
+//			if(thisMayBeZero || iMayBeZero){
+//				if(thisMayBeZero && iMayBeZero) {
+//					thisKillable.selectOneOrZeroBit(k);
+//					iKillable.selectOneOrZeroBit(k);
+//				} else if(thisMayBeZero){
+//					thisKillable.selectZeroAtBit(k);
+//					iKillable.selectOneOrZeroBit(k);
+//				} else if(iMayBeZero){
+//					thisKillable.selectOneOrZeroBit(k);
+//					iKillable.selectZeroAtBit(k);
+//				}
+//				currentBestLower = PaUtils.bigIntSetKthBitToZero(currentBestLower, k);
+//			}
+//		}
+//		Interval result = KillableBitInterval.transposeFromUnsignedBigInt(new Pair<BigInteger, BigInteger>(currentBestLower, currentBestUpper));
+//		return moveIntoRange(result);
+//	}
 
 	public AbstractDomain or(AbstractDomain a) {
 		Interval i = (Interval) a;
@@ -511,57 +634,4 @@ class Interval extends AbstractDomain {
 		return TOP.copy();
 	}
 	
-//	
-//	The complete 8-bit 2's complement integer range.
-//  ================================================
-//	
-//	Dealing with unsigned values for bitwise operations:
-//	 - unsigned: result = a OP b
-//	 - signed:   result = ~(~a OP ~b)
-//	
-//  1000 0000 -> -128 Integer.MIN_VALUE
-//	1000 0001 -> -127 
-//	1000 0010 -> -126 
-//	1111 0000 ->  -16
-//	
-//	1111 0001 ->  -15
-//	1111 0010 ->  -14
-//	1111 0011 ->  -13
-//	1111 0100 ->  -12
-//	1111 0101 ->  -11
-//	1111 0110 ->  -10
-//	1111 0111 ->   -9
-//	1111 1000 ->   -8
-//	1111 1001 ->   -7
-//	1111 1010 ->   -6
-//	1111 1011 ->   -5
-//	1111 1100 ->   -4
-//	1111 1101 ->   -3
-//	1111 1110 ->   -2
-//	1111 1111 ->   -1
-//	
-//	0000 0000 ->    0
-//	0000 0001 ->    1
-//	0000 0010 ->    2
-//	0000 0011 ->    3
-//	0000 0100 ->    4
-//	0000 0101 ->    5
-//	0000 0110 ->    6
-//	0000 0111 ->    7
-//	0000 1000 ->    8
-//	0000 1001 ->    9
-//	0000 1010 ->   10
-//	0000 1011 ->   11
-//	0000 1100 ->   12
-//	0000 1101 ->   13
-//	0000 1110 ->   14
-//	0000 1111 ->   15
-//	0001 0000 ->   16
-//
-//	0111 1100 ->  124
-//	0111 1101 ->  125
-//	0111 1110 ->  126
-//	0111 1111 ->  127 Integer.MAX_VALUE
-
-
 }

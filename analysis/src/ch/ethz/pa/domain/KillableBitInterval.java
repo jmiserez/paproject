@@ -4,7 +4,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import soot.toolkits.scalar.Pair;
 
@@ -14,7 +16,7 @@ public class KillableBitInterval {
 	public static int BITWISE_PRECISENESS = 4; //higher is better but slower
 	
 	private Pair<BigInteger, BigInteger> initialValue;
-	private HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> splitList = new HashMap<Integer, ArrayList<Pair<BigInteger,BigInteger>>>();
+	private HashMap<Integer, HashSet<Pair<BigInteger, BigInteger>>> splitList = new HashMap<Integer, HashSet<Pair<BigInteger,BigInteger>>>();
 	
 	public KillableBitInterval(Pair<BigInteger, BigInteger> initial) {
 		this.initialValue = initial;
@@ -32,7 +34,7 @@ public class KillableBitInterval {
 	public void reset(){
 		splitList.clear();
 		for(int k = 0; k < 32; k++){
-			splitList.put(k, new ArrayList<Pair<BigInteger, BigInteger>>());
+			splitList.put(k, new HashSet<Pair<BigInteger, BigInteger>>());
 		}
 		HashMap<Integer, Pair<BigInteger, BigInteger>> split = split(initialValue);
 		for(int k = 0; k < 32; k++){
@@ -44,11 +46,9 @@ public class KillableBitInterval {
 	 * Continue as if the k-th bit was fixed to be 1
 	 */
 	public void selectOneAtBit(int k){
-		if(nonNullEntries(splitList.get(k)).size() > 0){
-			ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(splitList.get(k));
-			splitList.clear(); //discard THIS ONE and AND ALL OTHER ZEROS, we want to just use THIS ONE
-			killBitSubrange(killBitCandidates, k, splitList);//re-add lower bits of THIS ONE
-		}
+		HashSet<Pair<BigInteger, BigInteger>> killBitCandidates = new HashSet<Pair<BigInteger,BigInteger>>(splitList.get(k));
+		splitList.clear(); //discard THIS ONE and AND ALL OTHER ZEROS, we want to just use THIS ONE
+		killBitSubrange(killBitCandidates, k, splitList);//re-add lower bits of THIS ONE
 	}
 	
 	/**
@@ -56,11 +56,9 @@ public class KillableBitInterval {
 	 * @param k
 	 */
 	public void selectOneOrZeroBit(int k){
-		if(nonNullEntries(splitList.get(k)).size() > 0){
-			ArrayList<Pair<BigInteger, BigInteger>> killBitCandidates = new ArrayList<Pair<BigInteger,BigInteger>>(splitList.get(k));
-			splitList.get(k).removeAll(nonNullEntries(killBitCandidates)); //discard THIS ONE, we want THIS ONE or ANY OTHER of the ZEROS
-			killBitSubrange(killBitCandidates, k, splitList); //re-add lower bits of THIS ONE
-		}
+		HashSet<Pair<BigInteger, BigInteger>> killBitCandidates = new HashSet<Pair<BigInteger,BigInteger>>(splitList.get(k));
+		splitList.get(k).removeAll(nonNullEntries(killBitCandidates)); //discard THIS ONE, we want THIS ONE or ANY OTHER of the ZEROS
+		killBitSubrange(killBitCandidates, k, splitList); //re-add lower bits of THIS ONE
 	}
 	
 	/**
@@ -188,10 +186,20 @@ public class KillableBitInterval {
 		return result;
 	}
 	
+	private static <T> HashSet<T> nonNullEntries(Set<T> set){
+		HashSet<T> result = new HashSet<T>();
+		for(T elem : set){
+			if(elem != null){
+				result.add(elem);
+			}
+		}
+		return result;
+	}
+	
 	/**
 	 * This is the actual KillBit_int(v,k) function. This function assumes that the MSB bit of both lower and upper is k, thus the range is bounded by this bit k.
 	 */
-	private static void killBitSubrange(ArrayList<Pair<BigInteger, BigInteger>> killBitRanges, int k , HashMap<Integer, ArrayList<Pair<BigInteger, BigInteger>>> splitListToAddTo){
+	private static void killBitSubrange(HashSet<Pair<BigInteger, BigInteger>> killBitRanges, int k , HashMap<Integer, HashSet<Pair<BigInteger, BigInteger>>> splitListToAddTo){
 		ArrayList<Pair<BigInteger, BigInteger>> cloneList = new ArrayList<Pair<BigInteger,BigInteger>>(killBitRanges);
 		for(Pair<BigInteger, BigInteger> elem : cloneList){
 			if(elem != null){
@@ -201,7 +209,7 @@ public class KillableBitInterval {
 				HashMap<Integer, Pair<BigInteger, BigInteger>> currentSplit = split(new Pair<BigInteger, BigInteger>(elemLower, elemUpper));
 				for(int m = 0; m < 32; m++){
 					if(splitListToAddTo.get(m) == null){
-						splitListToAddTo.put(m, new ArrayList<Pair<BigInteger, BigInteger>>());
+						splitListToAddTo.put(m, new HashSet<Pair<BigInteger, BigInteger>>());
 					}
 					if(currentSplit.get(m) != null){
 						splitListToAddTo.get(m).add(currentSplit.get(m));
@@ -219,11 +227,11 @@ public class KillableBitInterval {
 			//			
 			for(int m = 0; m < 32; m++){
 				// note that this adds impreciseness as described in the paper.
-				ArrayList<Pair<BigInteger, BigInteger>> listToMerge = splitListToAddTo.get(m);
+				HashSet<Pair<BigInteger, BigInteger>> setToMerge = splitListToAddTo.get(m);
 				Pair<BigInteger, BigInteger> newBounds = null;
-				if(listToMerge.size() > BITWISE_PRECISENESS){
+				if(setToMerge.size() > BITWISE_PRECISENESS){
 					newBounds = null;
-					for(Pair<BigInteger, BigInteger> elem : listToMerge){
+					for(Pair<BigInteger, BigInteger> elem : setToMerge){
 						if(elem != null){
 							if(newBounds == null){
 								newBounds = new Pair<BigInteger, BigInteger>(elem.getO1(), elem.getO2());
@@ -241,7 +249,7 @@ public class KillableBitInterval {
 							}
 						}
 					}
-					ArrayList<Pair<BigInteger, BigInteger>> newList = new ArrayList<Pair<BigInteger, BigInteger>>();
+					HashSet<Pair<BigInteger, BigInteger>> newList = new HashSet<Pair<BigInteger, BigInteger>>();
 					newList.add(newBounds);
 					splitListToAddTo.put(m, newList);
 				}

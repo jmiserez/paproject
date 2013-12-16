@@ -74,6 +74,18 @@ public class DomainTest {
 	}
 	
 	@Test
+	public void testBitwiseAnd1(){
+		Domain a = new Domain(-16, -16);
+		Domain b = new Domain(-16, 0);
+		AbstractDomain r = a.copy().and(b.copy());
+		int rVal = -16 & 0;
+//		if(!r.contains(new Domain(rVal))){
+		System.out.println(a.toString()+" & "+b.toString()+" = "+r.toString()+"   ["+-16+" & "+0+" = "+rVal+"]");
+//		}
+		assertTrue(r.contains(new Domain(rVal)));
+	}
+	
+	@Test
 	public void testBitwiseSoundnessAnd(){
 		testBitwiseSoundness(1);
 	}
